@@ -22,6 +22,11 @@ Which requires:
 
 This library contains classes for DB functions and query management/building.
 
+### Why?
+
+Everybody deserves a better way to retrieve SQL data away from the boilerplate, as well as
+turning the data into Java-friendly structures quickly.
+
 ### Library
 
 Contained in this release is a series of classes that are used for DB server functions, plus
