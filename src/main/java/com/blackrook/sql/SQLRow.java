@@ -20,7 +20,7 @@ import java.sql.Timestamp;
 import java.util.Date;
 import java.util.HashMap;
 
-import com.blackrook.sql.util.Utils;
+import com.blackrook.sql.struct.Utils;
 
 /**
  * SQLRow object. 

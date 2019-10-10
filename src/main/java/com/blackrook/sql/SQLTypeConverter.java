@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.blackrook.sql.SQLTypeProfileFactory.Profile;
-import com.blackrook.sql.util.Utils;
+import com.blackrook.sql.struct.Utils;
 
 /**
  * Type converter class for converting types to others.

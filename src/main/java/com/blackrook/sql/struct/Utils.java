@@ -4,7 +4,7 @@
  * This program and the accompanying materials are made available under 
  * the terms of the MIT License, which accompanies this distribution.
  ******************************************************************************/
-package com.blackrook.sql.util;
+package com.blackrook.sql.struct;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;

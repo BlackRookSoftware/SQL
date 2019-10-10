@@ -20,7 +20,7 @@ import java.util.List;
 import com.blackrook.sql.SQLTypeProfileFactory.Profile;
 import com.blackrook.sql.SQLTypeProfileFactory.Profile.FieldInfo;
 import com.blackrook.sql.SQLTypeProfileFactory.Profile.MethodInfo;
-import com.blackrook.sql.util.Utils;
+import com.blackrook.sql.struct.Utils;
 
 /**
  * Core database utilities object.
