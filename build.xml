@@ -25,8 +25,7 @@
 	<property name="project.javadoc.packages" value="
 		com.blackrook.sql,
 		com.blackrook.sql.hints,
-		com.blackrook.sql.query,
-		com.blackrook.sql.util
+		com.blackrook.sql.struct
 		"
 	/>
 	
