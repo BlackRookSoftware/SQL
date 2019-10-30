@@ -24,8 +24,8 @@ public class SQLConnector
 	
 	/**
 	 * Constructs a new database connector.
-	 * @param className		The fully qualified class name of the driver.
-	 * @param jdbcURL		The JDBC URL to use.
+	 * @param className	The fully qualified class name of the driver.
+	 * @param jdbcURL The JDBC URL to use.
 	 * @throws RuntimeException if the driver class cannot be found.
 	 */
 	public SQLConnector(String className, String jdbcURL)
@@ -41,6 +41,7 @@ public class SQLConnector
 	/**
 	 * Returns the full JDBC URL for this specific connector.
 	 * This differs by implementation and driver.
+	 * @return the URL
 	 */
 	public String getJDBCURL()
 	{
@@ -49,7 +50,9 @@ public class SQLConnector
 
 	/**
 	 * Returns a new, opened JDBC Connection, without using any parameters or credentials (some DB engines can use this).
+	 * @return a {@link DriverManager}-created connection.
 	 * @throws SQLException	if a connection can't be procured.
+	 * @see DriverManager#getConnection(String)
 	 */
 	public Connection getConnection() throws SQLException
 	{
@@ -59,6 +62,7 @@ public class SQLConnector
 	/**
 	 * Returns a new, opened JDBC Connection.
 	 * @param info the set of {@link Properties} to pass along to the JDBC {@link DriverManager}.
+	 * @return a {@link DriverManager}-created connection.
 	 * @throws SQLException	if a connection can't be procured.
 	 * @see DriverManager#getConnection(String, Properties)
 	 */
@@ -69,7 +73,11 @@ public class SQLConnector
 
 	/**
 	 * Returns a new, opened JDBC Connection using a user name and password.
+	 * @param username the username.
+	 * @param password the password.
+	 * @return a {@link DriverManager}-created connection using the provided credentials.
 	 * @throws SQLException	if a connection can't be procured.
+	 * @see DriverManager#getConnection(String, String, String)
 	 */
 	public Connection getConnection(String username, String password) throws SQLException
 	{

@@ -17,8 +17,11 @@ import java.sql.Clob;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import com.blackrook.sql.struct.Utils;
 
@@ -29,43 +32,327 @@ import com.blackrook.sql.struct.Utils;
  */
 public class SQLRow
 {
-	private HashMap<String, Object> columnMap;
+	/** Column index to SQL object. */
+	private List<Object> columnList;
+	/** Map of column name to index. */
+	private Map<String, Integer> columnMap;
 	
 	/**
-	 * Hidden constructor for a SQL row.
+	 * Constructor for a SQL row.
 	 * @param rs the open {@link ResultSet}, set to the row to create a SQLRow from.
-	 * @param columnNames the names given to the columns in the {@link ResultSet},
-	 * gathered ahead of time.
+	 * @param columnNames the names given to the columns in the {@link ResultSet}, gathered ahead of time.
 	 * @throws SQLException if a parse exception occurred.
 	 */
 	SQLRow(ResultSet rs, String[] columnNames) throws SQLException
 	{
+		this.columnList = new ArrayList<>(rs.getMetaData().getColumnCount());
 		this.columnMap = new HashMap<>(columnNames.length);
 		for (int i = 0; i < columnNames.length; i++)
-			columnMap.put(columnNames[i].toLowerCase(), rs.getObject(i+1));
+		{
+			Object sqlobj = rs.getObject(i + 1); // 1-based
+			columnList.add(sqlobj);
+			columnMap.put(columnNames[i].toLowerCase(), i);
+		}
 	}
 	
-	// Get a column by name.
-	private Object get(String columnName)
+	// Get a column by index.
+	private Object getByIndex(Integer columnIndex)
 	{
-		return this.columnMap.get(columnName.toLowerCase());
+		if (columnIndex == null || columnIndex < 0 || columnIndex >= columnList.size())
+			return null;
+		return columnList.get(columnIndex);
+	}
+
+	// Get a column by name.
+	private Object getByName(String columnName)
+	{
+		return getByIndex(columnMap.get(columnName.toLowerCase()));
 	}
 	
 	/**
-	 * Returns if this column's value is null.
+	 * Gets if a column's value is null.
+	 * @param columnIndex the column index to read (0-based).
+	 * @return the resultant value, or null if not a valid column name.
+	 */
+	public boolean getNull(int columnIndex)
+	{
+		return getByIndex(columnIndex) == null;
+	}
+
+	/**
+	 * Gets if a column's value is null.
+	 * @param columnName the column name to read (case-insensitive).
+	 * @return the resultant value, or null if not a valid column name.
 	 */
 	public boolean getNull(String columnName)
 	{
-		return get(columnName) == null;
+		return getByName(columnName) == null;
 	}
-	
+
 	/**
-	 * Returns the boolean value of this column.
+	 * Gets the boolean value of a column.
 	 * Can convert from Booleans, Numbers, and Strings.
+	 * @param columnIndex the column index to read (0-based).
+	 * @return the resultant value, or null if not a valid column name.
+	 */
+	public boolean getBoolean(int columnIndex)
+	{
+		return getBoolean(getByIndex(columnIndex));
+	}
+
+	/**
+	 * Gets the boolean value of a column.
+	 * Can convert from Booleans, Numbers, and Strings.
+	 * @param columnName the column name to read (case-insensitive).
+	 * @return the resultant value, or null if not a valid column name.
 	 */
 	public boolean getBoolean(String columnName)
 	{
-		Object obj = get(columnName);
+		return getBoolean(getByName(columnName));
+	}
+	
+	/**
+	 * Gets the byte value of a column.
+	 * Can convert from Booleans, Numbers, and Strings.
+	 * Booleans convert to 1 if true, 0 if false.
+	 * @param columnIndex the column index to read (0-based).
+	 * @return the resultant value, or null if not a valid column name.
+	 */
+	public byte getByte(int columnIndex)
+	{
+		return getByte(getByIndex(columnIndex));
+	}
+	
+	/**
+	 * Gets the byte value of a column.
+	 * Can convert from Booleans, Numbers, and Strings.
+	 * Booleans convert to 1 if true, 0 if false.
+	 * @param columnName the column name to read (case-insensitive).
+	 * @return the resultant value, or null if not a valid column name.
+	 */
+	public byte getByte(String columnName)
+	{
+		return getByte(getByName(columnName));
+	}
+	
+	/**
+	 * Gets the byte array value of a column, if this
+	 * can be represented as such (usually {@link Blob}s).
+	 * Can convert from Blobs.
+	 * @param columnIndex the column index to read (0-based).
+	 * @return the resultant value, or null if not a valid column name.
+	 */
+	public byte[] getByteArray(int columnIndex)
+	{
+		return getByteArray(getByIndex(columnIndex));
+	}
+	
+	/**
+	 * Gets the byte array value of a column, if this
+	 * can be represented as such (usually {@link Blob}s).
+	 * Can convert from Blobs.
+	 * @param columnName the column name to read (case-insensitive).
+	 * @return the resultant value, or null if not a valid column name.
+	 */
+	public byte[] getByteArray(String columnName)
+	{
+		return getByteArray(getByName(columnName));
+	}
+
+	/**
+	 * Gets the short value of a column.
+	 * Can convert from Booleans, Numbers, and Strings.
+	 * Booleans convert to 1 if true, 0 if false.
+	 * @param columnIndex the column index to read (0-based).
+	 * @return the resultant value, or null if not a valid column name.
+	 */
+	public short getShort(int columnIndex)
+	{
+		return getShort(getByIndex(columnIndex));
+	}
+	
+	/**
+	 * Gets the short value of a column.
+	 * Can convert from Booleans, Numbers, and Strings.
+	 * Booleans convert to 1 if true, 0 if false.
+	 * @param columnName the column name to read (case-insensitive).
+	 * @return the resultant value, or null if not a valid column name.
+	 */
+	public short getShort(String columnName)
+	{
+		return getShort(getByName(columnName));
+	}
+
+	/**
+	 * Gets the integer value of a column.
+	 * Can convert from Booleans, Numbers, and Strings.
+	 * Booleans convert to 1 if true, 0 if false.
+	 * @param columnIndex the column index to read (0-based).
+	 * @return the resultant value, or null if not a valid column name.
+	 */
+	public int getInt(int columnIndex)
+	{
+		return getInt(getByIndex(columnIndex));		
+	}
+	
+	/**
+	 * Gets the integer value of a column.
+	 * Can convert from Booleans, Numbers, and Strings.
+	 * Booleans convert to 1 if true, 0 if false.
+	 * @param columnName the column name to read (case-insensitive).
+	 * @return the resultant value, or null if not a valid column name.
+	 */
+	public int getInt(String columnName)
+	{
+		return getInt(getByName(columnName));
+	}
+
+	/**
+	 * Gets the float value of a column.
+	 * Can convert from Booleans, Numbers, and Strings.
+	 * Booleans convert to 1 if true, 0 if false.
+	 * @param columnIndex the column index to read (0-based).
+	 * @return the resultant value, or null if not a valid column name.
+	 */
+	public float getFloat(int columnIndex)
+	{
+		return getFloat(getByIndex(columnIndex));
+	}
+
+	/**
+	 * Gets the float value of a column.
+	 * Can convert from Booleans, Numbers, and Strings.
+	 * Booleans convert to 1 if true, 0 if false.
+	 * @param columnName the column name to read (case-insensitive).
+	 * @return the resultant value, or null if not a valid column name.
+	 */
+	public float getFloat(String columnName)
+	{
+		return getFloat(getByName(columnName));
+	}
+
+	/**
+	 * Gets the long value of a column.
+	 * Can convert from Booleans, Numbers, Strings, and Dates/Timestamps.
+	 * Booleans convert to 1 if true, 0 if false.
+	 * Dates and Timestamps convert to milliseconds since the Epoch.
+	 * @param columnIndex the column index to read (0-based).
+	 * @return the resultant value, or null if not a valid column name.
+	 */
+	public long getLong(int columnIndex)
+	{
+		return getLong(getByIndex(columnIndex));
+	}
+
+	/**
+	 * Gets the long value of a column.
+	 * Can convert from Booleans, Numbers, Strings, and Dates/Timestamps.
+	 * Booleans convert to 1 if true, 0 if false.
+	 * Dates and Timestamps convert to milliseconds since the Epoch.
+	 * @param columnName the column name to read (case-insensitive).
+	 * @return the resultant value, or null if not a valid column name.
+	 */
+	public long getLong(String columnName)
+	{
+		return getLong(getByName(columnName));
+	}
+
+	/**
+	 * Gets the double value of a column.
+	 * Can convert from Booleans, Numbers, and Strings.
+	 * Booleans convert to 1 if true, 0 if false.
+	 * @param columnIndex the column index to read (0-based).
+	 * @return the resultant value, or null if not a valid column name.
+	 */
+	public double getDouble(int columnIndex)
+	{
+		return getDouble(getByIndex(columnIndex));
+	}
+	
+	/**
+	 * Gets the double value of a column.
+	 * Can convert from Booleans, Numbers, and Strings.
+	 * Booleans convert to 1 if true, 0 if false.
+	 * @param columnName the column name to read (case-insensitive).
+	 * @return the resultant value, or null if not a valid column name.
+	 */
+	public double getDouble(String columnName)
+	{
+		return getDouble(getByName(columnName));
+	}
+
+	/**
+	 * Gets the string value of a column.
+	 * Can convert from Booleans, Numbers, byte and char arrays, Blobs, and Clobs.
+	 * Booleans convert to 1 if true, 0 if false.
+	 * Byte arrays and Blobs are converted using the native charset encoding.
+	 * Char arrays and Clobs are read entirely and converted to Strings.
+	 * @param columnIndex the column index to read (0-based).
+	 * @return the resultant value, or null if not a valid column name.
+	 * @see String#valueOf(Object)
+	 */
+	public String getString(int columnIndex)
+	{
+		return getString(getByIndex(columnIndex));
+	}
+
+	/**
+	 * Gets the string value of a column.
+	 * Can convert from Booleans, Numbers, byte and char arrays, Blobs, and Clobs.
+	 * Booleans convert to 1 if true, 0 if false.
+	 * Byte arrays and Blobs are converted using the native charset encoding.
+	 * Char arrays and Clobs are read entirely and converted to Strings.
+	 * @param columnName the column name to read (case-insensitive).
+	 * @return the resultant value, or null if not a valid column name.
+	 * @see String#valueOf(Object)
+	 */
+	public String getString(String columnName)
+	{
+		return getString(getByName(columnName));
+	}
+
+	/**
+	 * Gets the Timestamp value of the object, or null if not a Timestamp or Date.
+	 * @param columnIndex the column index to read (0-based).
+	 * @return the resultant value, or null if not a valid column name.
+	 */
+	public Timestamp getTimestamp(int columnIndex)
+	{
+		return getTimestamp(getByIndex(columnIndex));
+	}
+
+	/**
+	 * Gets the Timestamp value of the object, or null if not a Timestamp or Date.
+	 * @param columnName the column name to read (case-insensitive).
+	 * @return the resultant value, or null if not a valid column name.
+	 */
+	public Timestamp getTimestamp(String columnName)
+	{
+		return getTimestamp(getByName(columnName));
+	}
+
+	/**
+	 * Gets the Date value of the object, or null if not a Date.
+	 * @param columnIndex the column index to read (0-based).
+	 * @return the resultant value, or null if not a valid column name.
+	 */
+	public Date getDate(int columnIndex)
+	{
+		return getDate(getByIndex(columnIndex));
+	}
+	
+	/**
+	 * Gets the Date value of the object, or null if not a Date.
+	 * @param columnName the column name to read (case-insensitive).
+	 * @return the resultant value, or null if not a valid column name.
+	 */
+	public Date getDate(String columnName)
+	{
+		return getDate(getByName(columnName));
+	}
+
+	private boolean getBoolean(Object obj)
+	{
 		if (obj == null)
 			return false;
 		else if (obj instanceof Boolean)
@@ -76,15 +363,9 @@ public class SQLRow
 			return Utils.parseBoolean((String)obj);
 		return false;
 	}
-	
-	/**
-	 * Returns the byte value of this column.
-	 * Can convert from Booleans, Numbers, and Strings.
-	 * Booleans convert to 1 if true, 0 if false.
-	 */
-	public byte getByte(String columnName)
+
+	private byte getByte(Object obj)
 	{
-		Object obj = get(columnName);
 		if (obj == null)
 			return (byte)0;
 		else if (obj instanceof Boolean)
@@ -95,50 +376,35 @@ public class SQLRow
 			return Utils.parseByte((String)obj);
 		return (byte)0;
 	}
-	
-	/**
-	 * Returns the byte array value of this column, if this
-	 * can be represented as such (usually {@link Blob}s).
-	 * Can convert from Blobs.
-	 */
-	public byte[] getByteArray(String columnName)
+
+	private byte[] getByteArray(Object obj)
 	{
-		Object obj = get(columnName);
 		if (obj == null)
 			return null;
 		else if (obj instanceof Blob)
 		{
 			Blob blob = (Blob)obj;
-			InputStream in = null;
 			ByteArrayOutputStream bos = null;
-			try {
-				in = blob.getBinaryStream();
+			try (InputStream in = blob.getBinaryStream()) 
+			{
 				bos = new ByteArrayOutputStream();
 				byte[] buffer = new byte[65536];
 				int buf = 0;
 				while ((buf = in.read(buffer)) > 0)
 					bos.write(buffer, 0, buf);
-			} catch (SQLException e) {
+			} 
+			catch (SQLException | IOException e) 
+			{
 				return null;
-			} catch (IOException e) {
-				return null;
-			} finally {
-				SQL.close(in);
 			}
 			
 			return bos.toByteArray();
 		}
 		return null;
 	}
-	
-	/**
-	 * Returns the short value of this column.
-	 * Can convert from Booleans, Numbers, and Strings.
-	 * Booleans convert to 1 if true, 0 if false.
-	 */
-	public short getShort(String columnName)
+
+	private short getShort(Object obj)
 	{
-		Object obj = get(columnName);
 		if (obj == null)
 			return (short)0;
 		else if (obj instanceof Boolean)
@@ -149,15 +415,9 @@ public class SQLRow
 			return Utils.parseShort((String)obj);
 		return (short)0;
 	}
-	
-	/**
-	 * Returns the integer value of this column.
-	 * Can convert from Booleans, Numbers, and Strings.
-	 * Booleans convert to 1 if true, 0 if false.
-	 */
-	public int getInt(String columnName)
+
+	private int getInt(Object obj)
 	{
-		Object obj = get(columnName);
 		if (obj == null)
 			return 0;
 		else if (obj instanceof Boolean)
@@ -168,15 +428,9 @@ public class SQLRow
 			return Utils.parseInt((String)obj);
 		return 0;
 	}
-	
-	/**
-	 * Returns the float value of this column.
-	 * Can convert from Booleans, Numbers, and Strings.
-	 * Booleans convert to 1 if true, 0 if false.
-	 */
-	public float getFloat(String columnName)
+
+	private float getFloat(Object obj)
 	{
-		Object obj = get(columnName);
 		if (obj == null)
 			return 0f;
 		else if (obj instanceof Boolean)
@@ -187,16 +441,9 @@ public class SQLRow
 			return Utils.parseFloat((String)obj);
 		return 0f;
 	}
-	
-	/**
-	 * Returns the long value of this column.
-	 * Can convert from Booleans, Numbers, Strings, and Dates/Timestamps.
-	 * Booleans convert to 1 if true, 0 if false.
-	 * Dates and Timestamps convert to milliseconds since the Epoch.
-	 */
-	public long getLong(String columnName)
+
+	private long getLong(Object obj)
 	{
-		Object obj = get(columnName);
 		if (obj == null)
 			return 0L;
 		else if (obj instanceof Boolean)
@@ -209,15 +456,9 @@ public class SQLRow
 			return ((Date)obj).getTime();
 		return 0L;
 	}
-	
-	/**
-	 * Returns the double value of this column.
-	 * Can convert from Booleans, Numbers, and Strings.
-	 * Booleans convert to 1 if true, 0 if false.
-	 */
-	public double getDouble(String columnName)
+
+	private double getDouble(Object obj)
 	{
-		Object obj = get(columnName);
 		if (obj == null)
 			return 0.0;
 		else if (obj instanceof Boolean)
@@ -228,20 +469,9 @@ public class SQLRow
 			return Utils.parseDouble((String)obj);
 		return 0.0;
 	}
-	
-	/**
-	 * Returns the string value of this column.
-	 * Can convert from Booleans, Numbers, byte and char arrays,
-	 * Blobs, and Clobs.
-	 * Booleans convert to 1 if true, 0 if false.
-	 * Byte arrays and Blobs are converted using the native charset encoding.
-	 * Char arrays and Clobs are read entirely and converted to Strings.
-	 * @see String#valueOf(Object)
-	 */
-	public String getString(String columnName)
+
+	private String getString(Object obj)
 	{
-		Object obj = get(columnName);
-		
 		if (Utils.isArray(obj))
 		{
 			if (Utils.getArrayType(obj) == Byte.TYPE)
@@ -254,21 +484,18 @@ public class SQLRow
 		else if (obj instanceof Clob)
 		{
 			Clob clob = (Clob)obj;
-			Reader reader = null;
 			StringWriter sw = null;
-			try {
-				reader = clob.getCharacterStream();
+			try (Reader reader = clob.getCharacterStream()) 
+			{
 				sw = new StringWriter();
 				char[] charBuffer = new char[1024];
 				int cbuf = 0;
 				while ((cbuf = reader.read(charBuffer)) > 0)
 					sw.write(charBuffer, 0, cbuf);
-			} catch (SQLException e) {
+			} 
+			catch (SQLException | IOException e) 
+			{
 				return null;
-			} catch (IOException e) {
-				return null;
-			} finally {
-				SQL.close(reader);
 			}
 			
 			return sw.toString();
@@ -276,21 +503,18 @@ public class SQLRow
 		else if (obj instanceof Blob)
 		{
 			Blob blob = (Blob)obj;
-			InputStream in = null;
 			ByteArrayOutputStream bos = null;
-			try {
-				in = blob.getBinaryStream();
+			try (InputStream in = blob.getBinaryStream()) 
+			{
 				bos = new ByteArrayOutputStream();
 				byte[] buffer = new byte[65536];
 				int buf = 0;
 				while ((buf = in.read(buffer)) > 0)
 					bos.write(buffer, 0, buf);
-			} catch (SQLException e) {
+			}
+			catch (SQLException | IOException e) 
+			{
 				return null;
-			} catch (IOException e) {
-				return null;
-			} finally {
-				SQL.close(in);
 			}
 			
 			return new String(bos.toByteArray());
@@ -298,27 +522,18 @@ public class SQLRow
 		else
 			return obj != null ? String.valueOf(obj) : null;
 	}
-	
-	/**
-	 * Returns the Timestamp value of the object, or
-	 * null if not a Timestamp or Date.
-	 */
-	public Timestamp getTimestamp(String columnName)
+
+	private Timestamp getTimestamp(Object obj)
 	{
-		Object obj = get(columnName);
 		if (obj instanceof Timestamp)
 			return ((Timestamp)obj);
 		else if (obj instanceof Date)
 			return new Timestamp(((Date)obj).getTime());
 		return null;
 	}
-	
-	/**
-	 * Returns the Date value of the object, or null if not a Date.
-	 */
-	public Date getDate(String columnName)
+
+	private Date getDate(Object obj)
 	{
-		Object obj = get(columnName);
 		if (obj instanceof Date)
 			return (Date)obj;
 		return null;

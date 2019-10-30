@@ -88,28 +88,23 @@ public class SQLTransaction implements AutoCloseable
 	/**
 	 * Wraps a connection in a transaction.
 	 * The connection gets {@link Connection#setAutoCommit(boolean)} called on it with a FALSE parameter,
-	 * and sets the transaction isolation level. These 
-	 * @param toolkit the {@link Toolkit}.
+	 * and sets the transaction isolation level. These settings are restored when the transaction is 
+	 * finished via {@link #close()}, {@link #commit()}, or {@link #abort()}.
 	 * @param connection the connection to the database to use for this transaction.
 	 * @param transactionLevel the transaction level to set on this transaction.
-	 * @throws RuntimeException if the transaction could not be created.
+	 * @throws SQLException if this transaction could not be prepared.
 	 */
-	SQLTransaction(Connection connection, Level transactionLevel)
+	public SQLTransaction(Connection connection, Level transactionLevel) throws SQLException
 	{
 		this.connection = connection;
-		try {
-			this.previousLevelState = connection.getTransactionIsolation();
-			this.previousAutoCommit = connection.getAutoCommit();
-			connection.setAutoCommit(false);
-			connection.setTransactionIsolation(transactionLevel.id);
-		} catch (SQLException e) {
-			throw new RuntimeException(e);
-		}
+		this.previousLevelState = connection.getTransactionIsolation();
+		this.previousAutoCommit = connection.getAutoCommit();
+		this.connection.setAutoCommit(false);
+		this.connection.setTransactionIsolation(transactionLevel.id);
 	}
 
 	/**
-	 * Returns true if this transaction has been completed or false if
-	 * no more methods can be invoked on it.
+	 * @return true if this transaction has been completed or false if more methods can be invoked on it.
 	 */
 	public boolean isFinished()
 	{
@@ -118,47 +113,37 @@ public class SQLTransaction implements AutoCloseable
 	
 	/**
 	 * Completes this transaction and prevents further calls on it.
-	 * This calls {@link Connection#commit()} and {@link Connection#close()} 
+	 * This calls {@link Connection#commit()}. 
 	 * on the encapsulated connection and resets its previous transaction level state plus its auto-commit state.
 	 * @throws IllegalStateException if this transaction was already finished.
-	 * @throws RuntimeException if this causes a database error.
+	 * @throws SQLException if this causes a database error.
 	 */
-	public void complete()
+	public void complete() throws SQLException
 	{
 		if (isFinished())
 			throw new IllegalStateException("This transaction is already finished.");
 		
-		commit();
-		try {
-			connection.setTransactionIsolation(previousLevelState);
-			connection.setAutoCommit(previousAutoCommit);
-			connection.close();
-		} catch (SQLException e) {
-			throw new RuntimeException(e);
-		}
+		connection.commit();
+		connection.setTransactionIsolation(previousLevelState);
+		connection.setAutoCommit(previousAutoCommit);
 		connection = null;
 	}
 	
 	/**
 	 * Aborts this transaction and prevents further calls on it.
-	 * This calls {@link Connection#rollback()} and {@link Connection#close()} 
+	 * This calls {@link Connection#rollback()}. 
 	 * on the encapsulated connection and resets its previous transaction level state plus its auto-commit state.
 	 * @throws IllegalStateException if this transaction was already finished.
-	 * @throws RuntimeException if this causes a database error.
+	 * @throws SQLException if this causes a database error.
 	 */
-	public void abort()
+	public void abort() throws SQLException
 	{
 		if (isFinished())
 			throw new IllegalStateException("This transaction is already finished.");
 		
-		rollback();
-		try {
-			connection.setTransactionIsolation(previousLevelState);
-			connection.setAutoCommit(previousAutoCommit);
-			connection.close();
-		} catch (SQLException e) {
-			throw new RuntimeException(e);
-		}
+		connection.rollback();
+		connection.setTransactionIsolation(previousLevelState);
+		connection.setAutoCommit(previousAutoCommit);
 		connection = null;
 	}
 	
@@ -166,33 +151,25 @@ public class SQLTransaction implements AutoCloseable
 	 * Commits the actions completed so far in this transaction.
 	 * This is also called during {@link #complete()}.
 	 * @throws IllegalStateException if this transaction was already finished.
-	 * @throws RuntimeException if this causes a database error.
+	 * @throws SQLException if this causes a database error.
 	 */
-	public void commit()
+	public void commit() throws SQLException
 	{
 		if (isFinished())
 			throw new IllegalStateException("This transaction is already finished.");
-		try {
-			connection.commit();
-		} catch (SQLException e) {
-			throw new RuntimeException(e);
-		}
+		connection.commit();
 	}
 	
 	/**
 	 * Rolls back this entire transaction.
 	 * @throws IllegalStateException if this transaction was already finished.
-	 * @throws RuntimeException if this causes a database error.
+	 * @throws SQLException if this causes a database error.
 	 */
-	public void rollback()
+	public void rollback() throws SQLException
 	{
 		if (isFinished())
 			throw new IllegalStateException("This transaction is already finished.");
-		try {
-			connection.rollback();
-		} catch (SQLException e) {
-			throw new RuntimeException(e);
-		}
+		connection.rollback();
 	}
 	
 	/**
@@ -200,37 +177,26 @@ public class SQLTransaction implements AutoCloseable
 	 * after the {@link Savepoint} passed into this method will be rolled back.
 	 * @param savepoint the {@link Savepoint} to roll back to.
 	 * @throws IllegalStateException if this transaction was already finished.
-	 * @throws RuntimeException if this causes a database error.
+	 * @throws SQLException if this causes a database error.
 	 */
-	public void rollback(Savepoint savepoint)
+	public void rollback(Savepoint savepoint) throws SQLException
 	{
 		if (isFinished())
 			throw new IllegalStateException("This transaction is already finished.");
-		try {
-			connection.rollback(savepoint);
-	} catch (SQLException e) {
-			throw new RuntimeException(e);
-		}
+		connection.rollback(savepoint);
 	}
 	
 	/**
 	 * Calls {@link Connection#setSavepoint()} on the encapsulated connection.
 	 * @return a generated {@link Savepoint} of this transaction.
 	 * @throws IllegalStateException if this transaction was already finished.
-	 * @throws RuntimeException if this causes a database error.
+	 * @throws SQLException if this causes a database error.
 	 */
-	public Savepoint setSavepoint()
+	public Savepoint setSavepoint() throws SQLException
 	{
 		if (isFinished())
 			throw new IllegalStateException("This transaction is already finished.");
-		Savepoint out = null;
-		try {
-			out = connection.setSavepoint();
-		} catch (SQLException e) {
-			throw new RuntimeException(e);
-		}
-		
-		return out;
+		return connection.setSavepoint();
 	}
 	
 	/**
@@ -238,38 +204,133 @@ public class SQLTransaction implements AutoCloseable
 	 * @param name the name of the savepoint.
 	 * @return a generated {@link Savepoint} of this transaction.
 	 * @throws IllegalStateException if this transaction was already finished.
-	 * @throws RuntimeException if this causes a database error.
+	 * @throws SQLException if this causes a database error.
 	 */
-	public Savepoint setSavepoint(String name)
+	public Savepoint setSavepoint(String name) throws SQLException
 	{
 		if (isFinished())
 			throw new IllegalStateException("This transaction is already finished.");
-		Savepoint out = null;
-		try {
-			out = connection.setSavepoint(name);
-		} catch (SQLException e) {
-			throw new RuntimeException(e);
-		}
-		
-		return out;
+		return connection.setSavepoint(name);
 	}
 	
 	/**
-	 * Performs a query on this transaction.
+	 * Performs a query on a connection and extracts the data into a single SQLRow.
+	 * @param query the query statement to execute.
+	 * @param parameters list of parameters for parameterized queries.
+	 * @return the single result row returned, or null if no row returned.
+	 * @throws SQLException if the query cannot be executed or the query causes an error.
+	 */
+	public SQLRow getSingle(String query, Object ... parameters) throws SQLException
+	{
+		return SQL.getSingle(connection, query, parameters);
+	}
+
+	/**
+	 * Performs a query on a connection and creates an object from it from the first row, setting relevant fields.
+	 * <p>
+	 * Each result row is applied via the target object's public fields and setter methods.
+	 * <p>
+	 * For instance, if there is a column is a row called "color", its value
+	 * will be applied via the public field "color" or the setter "setColor()". Public
+	 * fields take precedence over setters.
+	 * <p>
+	 * Only certain types are converted without issue. Below is a set of source types
+	 * and their valid target types:
+	 * <table>
+	 * <tr>
+	 * 		<td><b>Boolean</b></td>
+	 * 		<td>
+	 * 			Boolean, all numeric primitives and their autoboxed equivalents, String. 
+	 * 		</td>
+	 * </tr>
+	 * <tr>
+	 * 		<td><b>Number</b></td>
+	 * 		<td>
+	 * 			Boolean (zero is false, nonzero is true), all numeric primitives and their autoboxed equivalents, String,
+	 * 			Date, Timestamp. 
+	 * 		</td>
+	 * </tr>
+	 * <tr>
+	 * 		<td><b>Timestamp</b></td>
+	 * 		<td>
+	 * 			Long (both primitive and object as milliseconds since the Epoch), Timestamp, Date, String 
+	 * 		</td>
+	 * </tr>
+	 * <tr>
+	 * 		<td><b>Date</b></td>
+	 * 		<td>
+	 * 			Long (both primitive and object as milliseconds since the Epoch), Timestamp, Date, String 
+	 * 		</td>
+	 * </tr>
+	 * <tr>
+	 * 		<td><b>String</b></td>
+	 * 		<td>
+	 * 			Boolean, all numeric primitives and their autoboxed equivalents, 
+	 * 			String, byte[], char[]. 
+	 * 		</td>
+	 * </tr>
+	 * <tr>
+	 * 		<td><b>Clob</b></td>
+	 * 		<td>
+	 * 			Boolean, all numeric primitives and their autoboxed equivalents, 
+	 * 			String, byte[], char[]. 
+	 * 		</td>
+	 * </tr>
+	 * <tr>
+	 * 		<td><b>Blob</b></td>
+	 * 		<td> 
+	 * 			String, byte[], char[]. 
+	 * 		</td>
+	 * </tr>
+	 * <tr>
+	 * 		<td><b>Clob</b></td>
+	 * 		<td>
+	 * 			Boolean, all numeric primitives and their autoboxed equivalents, 
+	 * 			String, byte[], char[]. 
+	 * 		</td>
+	 * </tr>
+	 * <tr>
+	 * 		<td><b>byte[]</b></td>
+	 * 		<td>
+	 *			String, byte[], char[]. 
+	 * 		</td>
+	 * </tr>
+	 * <tr>
+	 * 		<td><b>char[]</b></td>
+	 * 		<td>
+	 * 			Boolean, all numeric primitives and their autoboxed equivalents, 
+	 * 			String, byte[], char[]. 
+	 * 		</td>
+	 * </tr>
+	 * </table>
+	 * @param type the class type to instantiate.
 	 * @param query the query to execute.
 	 * @param parameters list of parameters for parameterized queries.
-	 * @return the SQLResult returned.
-	 * @throws RuntimeException if the query cannot be resolved or the query causes an error.
+	 * @return an instantiated object with the pertinent fields set, or null if no rows.
+	 * @throws SQLException if the query cannot be executed or the query causes an error.
+	 * @throws ClassCastException if one object type cannot be converted to another.
 	 */
-	public SQLResult doQuery(String query, Object ... parameters)
+	public <T> T getSingle(Class<T> type, String query, Object ... parameters) throws SQLException
 	{
-		SQLResult result = null;
+		T result = null;
 		try {
-			result = SQL.doQuery(connection, query, parameters); 
+			result = SQL.getSingle(connection, type, query, parameters); 
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
 		}
 		return result;
+	}
+
+	/**
+	 * Performs a query on this transaction.
+	 * @param query the query to execute.
+	 * @param parameters list of parameters for parameterized queries.
+	 * @return the result of the query.
+	 * @throws SQLException if the query cannot be executed or the query causes an error.
+	 */
+	public SQLResult getMulti(String query, Object ... parameters) throws SQLException
+	{
+		return SQL.getMulti(connection, query, parameters);
 	}
 
 	/**
@@ -354,44 +415,40 @@ public class SQLTransaction implements AutoCloseable
 	 * @param type the class type to instantiate.
 	 * @param query the query to execute.
 	 * @param parameters list of parameters for parameterized queries.
-	 * @return the SQLResult returned.
-	 * @throws RuntimeException if the query cannot be resolved or the query causes an error.
+	 * @return an array of instantiated objects with the pertinent fields set for each row.
+	 * @throws SQLException if the query cannot be executed or the query causes an error.
 	 * @throws ClassCastException if one object type cannot be converted to another.
 	 */
-	public <T> T[] doQuery(Class<T> type, String query, Object ... parameters)
+	public <T> T[] getMulti(Class<T> type, String query, Object ... parameters) throws SQLException
 	{
-		T[] result = null;
-		try {
-			result = SQL.doQuery(type, connection, query, parameters); 
-		} catch (SQLException e) {
-			throw new RuntimeException(e);
-		}
-		return result;
+		return SQL.getMulti(connection, type, query, parameters);
 	}
 
 	/**
 	 * Performs an update query on this transaction.
 	 * @param query the query to execute.
 	 * @param parameters list of parameters for parameterized queries.
-	 * @return the update result returned (usually number of rows affected).
-	 * @throws RuntimeException if the query cannot be resolved or the query causes an error.
+	 * @return the update result returned (usually number of rows affected and or generated ids).
+	 * @throws SQLException if the query cannot be executed or the query causes an error.
 	 */
-	public SQLResult doUpdateQuery(String query, Object ... parameters)
+	public SQLResult update(String query, Object ... parameters) throws SQLException
 	{
-		SQLResult result = null;
-		try {
-			result = SQL.doQueryUpdate(connection, query, parameters); 
-		} catch (SQLException e) {
-			throw new RuntimeException(e);
-		}
-		return result;
+		return SQL.update(connection, query, parameters);
 	}
 
+	/**
+	 * If this transaction is not finished, this aborts it.
+	 * @see AutoCloseable#close()
+	 * @see #isFinished()
+	 * @see #abort()
+	 */
 	@Override
 	public void close()
 	{
 		if (!isFinished())
-			abort();
+		{
+			try {abort();} catch (SQLException e) { /* Eat exception. */ }
+		}
 	}
 	
 }

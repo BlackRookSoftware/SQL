@@ -33,22 +33,14 @@ public class SQLResult implements Iterable<SQLRow>
 	protected List<SQLRow> rows;
 	
 	/**
-	 * Creates a new query result from an update query. 
+	 * Creates a new query result from an update query, plus generated keys. 
 	 */
-	public SQLResult(int rowsAffected) throws SQLException
+	SQLResult(int rowsAffected, ResultSet genKeys) throws SQLException
 	{
 		this.columnNames = EMPTY_ARRAY;
 		this.update = true;
 		this.rowCount = rowsAffected;
 		this.rows = null;
-	}
-
-	/**
-	 * Creates a new query result from an update query, plus generated keys. 
-	 */
-	public SQLResult(int rowsAffected, ResultSet genKeys) throws SQLException
-	{
-		this(rowsAffected);
 		
 		List<Long> vect = new ArrayList<Long>();
 		while (genKeys.next())
@@ -63,14 +55,13 @@ public class SQLResult implements Iterable<SQLRow>
 	/**
 	 * Creates a new query result from a result set. 
 	 */
-	public SQLResult(ResultSet rs) throws SQLException
+	SQLResult(ResultSet rs) throws SQLException
 	{
+		this.columnNames = SQL.getAllColumnNamesFromResultSet(rs);
 		this.update = false;
 		this.rowCount = 0;
-
-		this.columnNames = SQL.getAllColumnNamesFromResultSet(rs);
-
 		this.rows = new ArrayList<SQLRow>();
+		
 		while (rs.next())
 		{
 			this.rows.add(new SQLRow(rs, columnNames));
@@ -80,6 +71,7 @@ public class SQLResult implements Iterable<SQLRow>
 	
 	/**
 	 * Gets the names of the columns.
+	 * @return the column names in this result.
 	 */
 	public String[] getColumnNames()
 	{
@@ -88,6 +80,7 @@ public class SQLResult implements Iterable<SQLRow>
 
 	/**
 	 * Gets the amount of affected/returned rows from this query. 
+	 * @return the amount of records in this result.
 	 */
 	public int getRowCount()
 	{
@@ -95,7 +88,7 @@ public class SQLResult implements Iterable<SQLRow>
 	}
 
 	/**
-	 * Returns true if this came from an update.
+	 * @return true if this came from an update, false otherwise.
 	 */
 	public boolean isUpdate()
 	{
@@ -104,6 +97,7 @@ public class SQLResult implements Iterable<SQLRow>
 	
 	/**
 	 * Retrieves the rows from the query result.
+	 * @return a list of the rows in this result.
 	 */
 	public List<SQLRow> getRows()
 	{
@@ -111,8 +105,7 @@ public class SQLResult implements Iterable<SQLRow>
 	}
 
 	/**
-	 * Gets the first row, or only row in this result,
-	 * or null if no rows.
+	 * Gets the first row, or only row in this result, or null if no rows.
 	 * @return the row in this result.
 	 */
 	public SQLRow getRow()
@@ -121,11 +114,11 @@ public class SQLResult implements Iterable<SQLRow>
 	}
 	
 	/**
-	 * @return the generated id from the last query, if any, or 0L if none.
+	 * @return the generated id from the last query, if any, or null if none.
 	 */
-	public long getId()
+	public Long getId()
 	{
-		return nextId.length > 0 ? nextId[0] : 0L;
+		return nextId.length > 0 ? nextId[0] : null;
 	}
 	
 	/**
