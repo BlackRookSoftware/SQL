@@ -40,7 +40,7 @@ public final class SQL
 	 */
 	public static SQLRow getSingle(Connection connection, String query, Object ... parameters) throws SQLException
 	{
-		return getMulti(connection, query, parameters).getRow();
+		return getMultiple(connection, query, parameters).getRow();
 	}
 	
 	/**
@@ -158,7 +158,7 @@ public final class SQL
 	 * @return the result of the query.
 	 * @throws SQLException if a SQL exception occurs.
 	 */
-	public static SQLResult getMulti(Connection connection, String query, Object ... parameters) throws SQLException
+	public static SQLResult getMultiple(Connection connection, String query, Object ... parameters) throws SQLException
 	{
 		SQLResult out = null;		
 		try (PreparedStatement statement = connection.prepareStatement(query))
@@ -256,7 +256,7 @@ public final class SQL
 	 * @see #createObjectFromResultRow(Class, ResultSet, String[])
 	 */
 	@SuppressWarnings("unchecked")
-	public static <T> T[] getMulti(Connection connection, Class<T> type, String query, Object ... parameters) throws SQLException
+	public static <T> T[] getMultiple(Connection connection, Class<T> type, String query, Object ... parameters) throws SQLException
 	{
 		T[] out = null;
 		List<T> rows = null;

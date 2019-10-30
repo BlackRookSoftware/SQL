@@ -328,9 +328,9 @@ public class SQLTransaction implements AutoCloseable
 	 * @return the result of the query.
 	 * @throws SQLException if the query cannot be executed or the query causes an error.
 	 */
-	public SQLResult getMulti(String query, Object ... parameters) throws SQLException
+	public SQLResult getMultiple(String query, Object ... parameters) throws SQLException
 	{
-		return SQL.getMulti(connection, query, parameters);
+		return SQL.getMultiple(connection, query, parameters);
 	}
 
 	/**
@@ -419,9 +419,9 @@ public class SQLTransaction implements AutoCloseable
 	 * @throws SQLException if the query cannot be executed or the query causes an error.
 	 * @throws ClassCastException if one object type cannot be converted to another.
 	 */
-	public <T> T[] getMulti(Class<T> type, String query, Object ... parameters) throws SQLException
+	public <T> T[] getMultiple(Class<T> type, String query, Object ... parameters) throws SQLException
 	{
-		return SQL.getMulti(connection, type, query, parameters);
+		return SQL.getMultiple(connection, type, query, parameters);
 	}
 
 	/**
