@@ -29,6 +29,7 @@ public interface SQLCallable
 	 * Only certain types are converted without issue. Below is a set of source types
 	 * and their valid target types:
 	 * <table>
+	 * <caption>Conversion of Types</caption>
 	 * <tr>
 	 * 		<td><b>Boolean</b></td>
 	 * 		<td>
@@ -95,6 +96,7 @@ public interface SQLCallable
 	 * 		</td>
 	 * </tr>
 	 * </table>
+	 * @param <T> the returned data type.
 	 * @param type the class type to instantiate.
 	 * @param query the query to execute.
 	 * @param parameters list of parameters for parameterized queries.
@@ -125,6 +127,7 @@ public interface SQLCallable
 	 * Only certain types are converted without issue. Below is a set of source types
 	 * and their valid target types:
 	 * <table>
+	 * <caption>Conversion of Types</caption>
 	 * <tr>
 	 * 		<td><b>Boolean</b></td>
 	 * 		<td>
@@ -191,6 +194,7 @@ public interface SQLCallable
 	 * 		</td>
 	 * </tr>
 	 * </table>
+	 * @param <T> the returned data type.
 	 * @param type the class type to instantiate.
 	 * @param query the query to execute.
 	 * @param parameters list of parameters for parameterized queries.

@@ -24,6 +24,7 @@ public @interface SQLName
 	/**
 	 * Specifies the column/field name. 
 	 * If not specified, then this uses the default name for the annotated field.
+	 * @return the column/field name, or the empty string for "default".
 	 */
 	String value() default "";
 }

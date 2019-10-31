@@ -104,6 +104,7 @@ public final class SQL
 	 * Only certain types are converted without issue. Below is a set of source types
 	 * and their valid target types:
 	 * <table>
+	 * <caption>Conversion of Types</caption>
 	 * <tr>
 	 * 		<td><b>Boolean</b></td>
 	 * 		<td>
@@ -170,6 +171,7 @@ public final class SQL
 	 * 		</td>
 	 * </tr>
 	 * </table>
+	 * @param <T> the returned data type.
 	 * @param connection the connection to create a prepared statement and execute from.
 	 * @param type the class type to instantiate.
 	 * @param query the query statement to execute.
@@ -234,6 +236,7 @@ public final class SQL
 	 * Only certain types are converted without issue. Below is a set of source types
 	 * and their valid target types:
 	 * <table>
+	 * <caption>Conversion of Types</caption>
 	 * <tr>
 	 * 		<td><b>Boolean</b></td>
 	 * 		<td>
@@ -300,6 +303,7 @@ public final class SQL
 	 * 		</td>
 	 * </tr>
 	 * </table>
+	 * @param <T> the returned data type.
 	 * @param connection the connection to create a prepared statement and execute from.
 	 * @param type the class type to instantiate.
 	 * @param query the query statement to execute.
