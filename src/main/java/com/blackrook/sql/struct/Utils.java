@@ -254,8 +254,8 @@ public final class Utils
 
 	/**
 	 * Creates a new instance of a class from a class type.
-	 * This essentially calls {@link Class#newInstance()}, but wraps the call
-	 * in a try/catch block that only throws an exception if something goes wrong.
+	 * This essentially calls {@link Class#getDeclaredConstructor(Class...)} with no arguments 
+	 * and {@link Class#newInstance()}, but wraps the call in a try/catch block that only throws an exception if something goes wrong.
 	 * @param <T> the return object type.
 	 * @param clazz the class type to instantiate.
 	 * @return a new instance of an object.
@@ -266,16 +266,24 @@ public final class Utils
 	{
 		Object out = null;
 		try {
-			out = construct(clazz.getDeclaredConstructor());
-		} catch (NoSuchMethodException ex) {
-			throw new RuntimeException(ex);
+			out = clazz.getDeclaredConstructor().newInstance();
 		} catch (SecurityException ex) {
 			throw new RuntimeException(ex);
+		} catch (IllegalAccessException e) {
+			throw new RuntimeException(e);
+		} catch (InstantiationException e) {
+			throw new RuntimeException(e);
+		} catch (IllegalArgumentException e) {
+			throw new RuntimeException(e);
+		} catch (InvocationTargetException e) {
+			throw new RuntimeException(e);
+		} catch (NoSuchMethodException e) {
+			throw new RuntimeException(e);
 		}
 		
 		return clazz.cast(out);
 	}
-
+	
 	/**
 	 * Creates a new instance of a class from a class type.
 	 * This essentially calls {@link Class#newInstance()}, but wraps the call

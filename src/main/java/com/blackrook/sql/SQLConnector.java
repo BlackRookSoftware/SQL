@@ -36,7 +36,7 @@ public class SQLConnector
 	 * @param jdbcURL The JDBC URL to use.
 	 * @throws RuntimeException if the driver class cannot be found.
 	 */
-	private SQLConnector(String className, String jdbcURL)
+	public SQLConnector(String className, String jdbcURL)
 	{
 		this.jdbcURL = jdbcURL;
 		this.info = null;
@@ -105,12 +105,11 @@ public class SQLConnector
 	}
 
 	/**
-	 * Retrieves a connection from this pool, passes it to the provided {@link SQLConnectionConsumer} function, then closes it.
+	 * Creates a connection, passes it to the provided {@link SQLConnectionConsumer} function, then closes it.
 	 * @param handler the consumer function that accepts the retrieved connection.
-	 * @throws InterruptedException	if an interrupt is thrown by the current thread waiting for an available connection. 
 	 * @throws SQLException if a connection cannot be re-created or re-established.
 	 */
-	public void getConnectionAnd(SQLConnectionConsumer handler) throws InterruptedException, SQLException
+	public void getConnectionAnd(SQLConnectionConsumer handler) throws SQLException
 	{
 		try (SQLConnection connection = getConnection())
 		{
@@ -119,15 +118,14 @@ public class SQLConnector
 	}
 	
 	/**
-	 * Retrieves a connection from this pool, passes it to the provided {@link SQLConnectionFunction}, 
+	 * Creates a connection, passes it to the provided {@link SQLConnectionFunction}, 
 	 * calls it, closes it, and returns the result.
 	 * @param <R> the return type.
 	 * @param handler the consumer function that accepts the retrieved connection and returns a value.
 	 * @return the return value of the handler function.
-	 * @throws InterruptedException	if an interrupt is thrown by the current thread waiting for an available connection. 
 	 * @throws SQLException if a connection cannot be re-created or re-established.
 	 */
-	public <R> R getConnectionAnd(SQLConnectionFunction<R> handler) throws InterruptedException, SQLException
+	public <R> R getConnectionAnd(SQLConnectionFunction<R> handler) throws SQLException
 	{
 		try (SQLConnection connection = getConnection())
 		{
