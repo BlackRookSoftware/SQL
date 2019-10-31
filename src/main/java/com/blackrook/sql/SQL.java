@@ -151,7 +151,7 @@ public final class SQL
 	 * 		</td>
 	 * </tr>
 	 * <tr>
-	 * 		<td><b>Clob</b></td>
+	 * 		<td><b>NClob</b></td>
 	 * 		<td>
 	 * 			Boolean, all numeric primitives and their autoboxed equivalents, 
 	 * 			String, byte[], char[]. 
@@ -283,7 +283,7 @@ public final class SQL
 	 * 		</td>
 	 * </tr>
 	 * <tr>
-	 * 		<td><b>Clob</b></td>
+	 * 		<td><b>NClob</b></td>
 	 * 		<td>
 	 * 			Boolean, all numeric primitives and their autoboxed equivalents, 
 	 * 			String, byte[], char[]. 
