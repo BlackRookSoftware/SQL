@@ -14,6 +14,7 @@ import java.io.Reader;
 import java.io.StringWriter;
 import java.sql.Blob;
 import java.sql.Clob;
+import java.sql.NClob;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -498,6 +499,24 @@ public class SQLRow
 				return null;
 			}
 			
+			return sw.toString();
+		}
+		else if (obj instanceof NClob)
+		{
+			NClob clob = (NClob)obj;
+			StringWriter sw = null;
+			try (Reader reader = clob.getCharacterStream()) 
+			{
+				sw = new StringWriter();
+				char[] charBuffer = new char[1024];
+				int cbuf = 0;
+				while ((cbuf = reader.read(charBuffer)) > 0)
+					sw.write(charBuffer, 0, cbuf);
+			} 
+			catch (SQLException | IOException e) 
+			{
+				return null;
+			}
 			return sw.toString();
 		}
 		else if (obj instanceof Blob)

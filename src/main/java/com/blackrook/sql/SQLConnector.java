@@ -7,10 +7,12 @@
  ******************************************************************************/
 package com.blackrook.sql;
 
-import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Properties;
+
+import com.blackrook.sql.util.SQLConnectionConsumer;
+import com.blackrook.sql.util.SQLConnectionFunction;
 
 /**
  * Core database JDBC connector object.
@@ -21,6 +23,12 @@ public class SQLConnector
 {
 	/** JDBC URL. */
 	private String jdbcURL;
+	/** Info properties. */
+	private Properties info;
+	/** Username. */
+	private String userName;
+	/** Password. */
+	private String password;
 	
 	/**
 	 * Constructs a new database connector.
@@ -28,14 +36,46 @@ public class SQLConnector
 	 * @param jdbcURL The JDBC URL to use.
 	 * @throws RuntimeException if the driver class cannot be found.
 	 */
-	public SQLConnector(String className, String jdbcURL)
+	private SQLConnector(String className, String jdbcURL)
 	{
 		this.jdbcURL = jdbcURL;
+		this.info = null;
+		this.userName = null;
+		this.password = null;
+		
 		try {
 			Class.forName(className);
 		} catch (ClassNotFoundException e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	/**
+	 * Constructs a new database connector.
+	 * @param className	The fully qualified class name of the driver.
+	 * @param jdbcURL The JDBC URL to use.
+	 * @param info the set of {@link Properties} to pass along to the JDBC {@link DriverManager}.
+	 * @throws RuntimeException if the driver class cannot be found.
+	 */
+	public SQLConnector(String className, String jdbcURL, Properties info)
+	{
+		this(className, jdbcURL);
+		this.info = info;
+	}
+
+	/**
+	 * Constructs a new database connector.
+	 * @param className	The fully qualified class name of the driver.
+	 * @param jdbcURL The JDBC URL to use.
+	 * @param userName the username.
+	 * @param password the password.
+	 * @throws RuntimeException if the driver class cannot be found.
+	 */
+	public SQLConnector(String className, String jdbcURL, String userName, String password)
+	{
+		this(className, jdbcURL);
+		this.userName = userName;
+		this.password = password;
 	}
 
 	/**
@@ -49,39 +89,50 @@ public class SQLConnector
 	}
 
 	/**
-	 * Returns a new, opened JDBC Connection, without using any parameters or credentials (some DB engines can use this).
+	 * Returns a new, opened JDBC Connection using the credentials stored with this connector.
 	 * @return a {@link DriverManager}-created connection.
 	 * @throws SQLException	if a connection can't be procured.
 	 * @see DriverManager#getConnection(String)
 	 */
-	public Connection getConnection() throws SQLException
+	public SQLConnection getConnection() throws SQLException
 	{
-		return DriverManager.getConnection(getJDBCURL());
+		if (userName != null)
+			return new SQLConnection(DriverManager.getConnection(getJDBCURL(), userName, password));
+		else if (info != null)
+			return new SQLConnection(DriverManager.getConnection(getJDBCURL(), info));
+		else
+			return new SQLConnection(DriverManager.getConnection(getJDBCURL()));
 	}
 
 	/**
-	 * Returns a new, opened JDBC Connection.
-	 * @param info the set of {@link Properties} to pass along to the JDBC {@link DriverManager}.
-	 * @return a {@link DriverManager}-created connection.
-	 * @throws SQLException	if a connection can't be procured.
-	 * @see DriverManager#getConnection(String, Properties)
+	 * Retrieves a connection from this pool, passes it to the provided {@link SQLConnectionConsumer} function, then closes it.
+	 * @param handler the consumer function that accepts the retrieved connection.
+	 * @throws InterruptedException	if an interrupt is thrown by the current thread waiting for an available connection. 
+	 * @throws SQLException if a connection cannot be re-created or re-established.
 	 */
-	public Connection getConnection(Properties info) throws SQLException
+	public void getConnectionAnd(SQLConnectionConsumer handler) throws InterruptedException, SQLException
 	{
-		return DriverManager.getConnection(getJDBCURL(), info);
+		try (SQLConnection connection = getConnection())
+		{
+			handler.accept(connection);
+		}
 	}
-
+	
 	/**
-	 * Returns a new, opened JDBC Connection using a user name and password.
-	 * @param username the username.
-	 * @param password the password.
-	 * @return a {@link DriverManager}-created connection using the provided credentials.
-	 * @throws SQLException	if a connection can't be procured.
-	 * @see DriverManager#getConnection(String, String, String)
+	 * Retrieves a connection from this pool, passes it to the provided {@link SQLConnectionFunction}, 
+	 * calls it, closes it, and returns the result.
+	 * @param <R> the return type.
+	 * @param handler the consumer function that accepts the retrieved connection and returns a value.
+	 * @return the return value of the handler function.
+	 * @throws InterruptedException	if an interrupt is thrown by the current thread waiting for an available connection. 
+	 * @throws SQLException if a connection cannot be re-created or re-established.
 	 */
-	public Connection getConnection(String username, String password) throws SQLException
+	public <R> R getConnectionAnd(SQLConnectionFunction<R> handler) throws InterruptedException, SQLException
 	{
-		return DriverManager.getConnection(getJDBCURL(), username, password);
+		try (SQLConnection connection = getConnection())
+		{
+			return handler.apply(connection);
+		}
 	}
-
+	
 }

@@ -14,12 +14,16 @@ import java.lang.annotation.Target;
 
 /**
  * Placing this annotation on public fields or getter/setter methods on POJOs
- * hints at this field not being included in the resulting collection/table.
+ * hints that this field uses a different field or column name in a collection or table.
  * @author Matthew Tropiano
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.FIELD, ElementType.METHOD})
-public @interface DBIgnore
+public @interface SQLName
 {
-
+	/**
+	 * Specifies the column/field name. 
+	 * If not specified, then this uses the default name for the annotated field.
+	 */
+	String value() default "";
 }

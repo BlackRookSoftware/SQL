@@ -29,7 +29,7 @@ public class SQLResult implements Iterable<SQLRow>
 	protected long[] nextId;
 	/** Was this an update query? */
 	protected boolean update;
-	/** Set of hash maps of associative data. */
+	/** List of rows of associative data. */
 	protected List<SQLRow> rows;
 	
 	/**
