@@ -3,6 +3,8 @@
 Copyright (c) 2019 Black Rook Software. All rights reserved.  
 [https://github.com/BlackRookSoftware/SQL](https://github.com/BlackRookSoftware/SQL)
 
+[Latest Release](https://github.com/BlackRookSoftware/SQL/releases/latest)
+
 ### Required Libraries
 
 NONE
@@ -64,6 +66,10 @@ To clean up everything:
 
 	ant clean
 	
+### Javadocs
+
+Online Javadocs can be found at: [https://blackrooksoftware.github.io/SQL/javadoc/](https://blackrooksoftware.github.io/SQL/javadoc/)
+
 ### Other
 
 This program and the accompanying materials are made available under the 
