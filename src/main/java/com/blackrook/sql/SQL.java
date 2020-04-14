@@ -559,6 +559,7 @@ public final class SQL
 	/**
 	 * Creates new objects from the result set and sets the fields on them using row information.
 	 * The column names are pulled from the ResultSet metadata.
+	 * @param <T> the returned data type.
 	 * @param objectType the object type to instantiate.
 	 * @param resultSet the result set.
 	 * @return a new object with the relevant fields set.
@@ -584,6 +585,7 @@ public final class SQL
 	/**
 	 * Creates a new object from the current result row and sets the fields on it using row information.
 	 * The column names are pulled from the metadata.
+	 * @param <T> the returned data type.
 	 * @param objectType the object type to instantiate.
 	 * @param resultSet the result set.
 	 * @return a new object with the relevant fields set.
@@ -598,6 +600,7 @@ public final class SQL
 
 	/**
 	 * Creates a new object from the current result row and sets the fields on it using row information.
+	 * @param <T> the returned data type.
 	 * @param objectType the object type to instantiate.
 	 * @param resultSet the result set.
 	 * @param columnNames the names of the columns in the set.
