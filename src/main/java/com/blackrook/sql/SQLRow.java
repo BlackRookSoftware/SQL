@@ -20,11 +20,12 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import com.blackrook.sql.struct.Utils;
+import com.blackrook.sql.util.SQLRuntimeException;
 
 /**
  * SQLRow object. 
@@ -33,6 +34,9 @@ import com.blackrook.sql.struct.Utils;
  */
 public class SQLRow
 {
+	private static final ThreadLocal<char[]> CHARBUFFER = ThreadLocal.withInitial(()->new char[1024 * 8]);
+	private static final ThreadLocal<byte[]> BYTEBUFFER = ThreadLocal.withInitial(()->new byte[1024 * 32]);
+	
 	/** Column index to SQL object. */
 	private List<Object> columnList;
 	/** Map of column name to index. */
@@ -47,12 +51,21 @@ public class SQLRow
 	SQLRow(ResultSet rs, String[] columnNames) throws SQLException
 	{
 		this.columnList = new ArrayList<>(rs.getMetaData().getColumnCount());
-		this.columnMap = new HashMap<>(columnNames.length);
+		this.columnMap = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 		for (int i = 0; i < columnNames.length; i++)
 		{
 			Object sqlobj = rs.getObject(i + 1); // 1-based
+			
+			// Blobs, Clobs, and NClobs need to be converted while the connection is open.
+			if (sqlobj instanceof Blob)
+				sqlobj = getByteArray(sqlobj);
+			else if (sqlobj instanceof Clob)
+				sqlobj = getString(sqlobj);
+			else if (sqlobj instanceof NClob)
+				sqlobj = getString(sqlobj);
+			
 			columnList.add(sqlobj);
-			columnMap.put(columnNames[i].toLowerCase(), i);
+			columnMap.put(columnNames[i], i);
 		}
 	}
 	
@@ -67,7 +80,7 @@ public class SQLRow
 	// Get a column by name.
 	private Object getByName(String columnName)
 	{
-		return getByIndex(columnMap.get(columnName.toLowerCase()));
+		return getByIndex(columnMap.get(columnName));
 	}
 	
 	/**
@@ -389,14 +402,18 @@ public class SQLRow
 			try (InputStream in = blob.getBinaryStream()) 
 			{
 				bos = new ByteArrayOutputStream();
-				byte[] buffer = new byte[65536];
+				byte[] buffer = BYTEBUFFER.get();
 				int buf = 0;
 				while ((buf = in.read(buffer)) > 0)
 					bos.write(buffer, 0, buf);
 			} 
-			catch (SQLException | IOException e) 
+			catch (SQLException e) 
 			{
-				return null;
+				throw new SQLRuntimeException("Blob conversion to String failed.", e);
+			}
+			catch (IOException e) 
+			{
+				throw new SQLRuntimeException("Blob conversion to String failed.", e);
 			}
 			
 			return bos.toByteArray();
@@ -489,14 +506,18 @@ public class SQLRow
 			try (Reader reader = clob.getCharacterStream()) 
 			{
 				sw = new StringWriter();
-				char[] charBuffer = new char[1024];
+				char[] charBuffer = CHARBUFFER.get();
 				int cbuf = 0;
 				while ((cbuf = reader.read(charBuffer)) > 0)
 					sw.write(charBuffer, 0, cbuf);
 			} 
-			catch (SQLException | IOException e) 
+			catch (SQLException e) 
 			{
-				return null;
+				throw new SQLRuntimeException("Clob conversion to String failed.", e);
+			}
+			catch (IOException e) 
+			{
+				throw new SQLRuntimeException("Clob conversion to String failed.", e);
 			}
 			
 			return sw.toString();
@@ -508,14 +529,18 @@ public class SQLRow
 			try (Reader reader = clob.getCharacterStream()) 
 			{
 				sw = new StringWriter();
-				char[] charBuffer = new char[1024];
+				char[] charBuffer = CHARBUFFER.get();
 				int cbuf = 0;
 				while ((cbuf = reader.read(charBuffer)) > 0)
 					sw.write(charBuffer, 0, cbuf);
 			} 
-			catch (SQLException | IOException e) 
+			catch (SQLException e) 
 			{
-				return null;
+				throw new SQLRuntimeException("NClob conversion to String failed.", e);
+			}
+			catch (IOException e) 
+			{
+				throw new SQLRuntimeException("NClob conversion to String failed.", e);
 			}
 			return sw.toString();
 		}
@@ -526,14 +551,18 @@ public class SQLRow
 			try (InputStream in = blob.getBinaryStream()) 
 			{
 				bos = new ByteArrayOutputStream();
-				byte[] buffer = new byte[65536];
+				byte[] buffer = BYTEBUFFER.get();
 				int buf = 0;
 				while ((buf = in.read(buffer)) > 0)
 					bos.write(buffer, 0, buf);
 			}
-			catch (SQLException | IOException e) 
+			catch (SQLException e) 
 			{
-				return null;
+				throw new SQLRuntimeException("Blob conversion to String failed.", e);
+			}
+			catch (IOException e) 
+			{
+				throw new SQLRuntimeException("Blob conversion to String failed.", e);
 			}
 			
 			return new String(bos.toByteArray());

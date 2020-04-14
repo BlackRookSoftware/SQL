@@ -7,6 +7,7 @@
  ******************************************************************************/
 package com.blackrook.sql.util;
 
+import java.io.IOException;
 import java.sql.SQLException;
 
 /**
@@ -24,6 +25,38 @@ public class SQLRuntimeException extends RuntimeException
 	public SQLRuntimeException(SQLException e)
 	{
 		super(e);
+	}
+	
+	/**
+	 * Creates a new SQLRuntimeException from an {@link IOException}.
+	 * @param e the exception to wrap.
+	 * @since [NOW]
+	 */
+	public SQLRuntimeException(IOException e)
+	{
+		super(e);
+	}
+	
+	/**
+	 * Creates a new SQLRuntimeException from a {@link SQLException}.
+	 * @param message the message.
+	 * @param e the exception to wrap.
+	 * @since [NOW]
+	 */
+	public SQLRuntimeException(String message, SQLException e)
+	{
+		super(message, e);
+	}
+	
+	/**
+	 * Creates a new SQLRuntimeException from an {@link IOException}.
+	 * @param message the message.
+	 * @param e the exception to wrap.
+	 * @since [NOW]
+	 */
+	public SQLRuntimeException(String message, IOException e)
+	{
+		super(message, e);
 	}
 	
 	/**

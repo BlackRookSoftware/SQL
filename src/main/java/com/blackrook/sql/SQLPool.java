@@ -205,6 +205,7 @@ public class SQLPool implements AutoCloseable
 
 	/**
 	 * Releases a connection back to the pool.
+	 * Also cancels a transaction that it may still be in, if any.
 	 * @param connection the connection to release.
 	 */
 	public void releaseConnection(SQLConnection connection)

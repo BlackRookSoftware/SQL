@@ -28,14 +28,20 @@ import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import com.blackrook.sql.SQLConnection.Transaction;
+import com.blackrook.sql.SQLConnection.TransactionLevel;
 import com.blackrook.sql.hints.SQLIgnore;
 import com.blackrook.sql.hints.SQLName;
 import com.blackrook.sql.struct.Utils;
 import com.blackrook.sql.util.SQLRuntimeException;
+import com.blackrook.sql.util.SQLTransactionConsumer;
+import com.blackrook.sql.util.SQLTransactionFunction;
 
 /**
  * Core database utilities object.
@@ -44,6 +50,9 @@ import com.blackrook.sql.util.SQLRuntimeException;
 public final class SQL
 {
 	private SQL() {}
+	
+	private static final ThreadLocal<char[]> CHARBUFFER = ThreadLocal.withInitial(()->new char[1024 * 8]);
+	private static final ThreadLocal<byte[]> BYTEBUFFER = ThreadLocal.withInitial(()->new byte[1024 * 32]);
 	
 	/** Default converter for {@link #createForType(Object, Class)}. */
 	private static final SQLTypeProfileFactory PROFILE_FACTORY = new SQLTypeProfileFactory(new SQLTypeProfileFactory.MemberPolicy()
@@ -182,7 +191,6 @@ public final class SQL
 	 */
 	public static <T> T getRow(Connection connection, Class<T> type, String query, Object ... parameters)
 	{
-		T out = null;
 		try (PreparedStatement statement = connection.prepareStatement(query))
 		{
 			int i = 1;
@@ -191,17 +199,13 @@ public final class SQL
 
 			try (ResultSet resultSet = statement.executeQuery())
 			{
-				String[] columnNames = getAllColumnNamesFromResultSet(resultSet);
-				if (resultSet.next())
-					out = createObjectFromResultRow(type, resultSet, columnNames);
+				return createObjectFromResultRow(type, resultSet);
 			}
 		}
 		catch (SQLException e)
 		{
 			throw new SQLRuntimeException(e);
 		}
-		
-		return out;
 	}
 	
 	/**
@@ -312,11 +316,8 @@ public final class SQL
 	 * @throws SQLRuntimeException if the query cannot be executed or the query causes an error.
 	 * @throws ClassCastException if one object type cannot be converted to another.
 	 */
-	@SuppressWarnings("unchecked")
 	public static <T> T[] getResult(Connection connection, Class<T> type, String query, Object ... parameters)
 	{
-		T[] out = null;
-		List<T> rows = null;
 		try (PreparedStatement statement = connection.prepareStatement(query))
 		{
 			int i = 1;
@@ -325,19 +326,13 @@ public final class SQL
 
 			try (ResultSet resultSet = statement.executeQuery())
 			{
-				String[] columnNames = getAllColumnNamesFromResultSet(resultSet);
-				rows = new ArrayList<T>();
-				while (resultSet.next())
-					rows.add(createObjectFromResultRow(type, resultSet, columnNames));
+				return createObjectsFromResultSet(type, resultSet);
 			}
 		}
 		catch (SQLException e)
 		{
 			throw new SQLRuntimeException(e);
 		}
-
-		rows.toArray(out = (T[])Array.newInstance(type, rows.size()));
-		return out;
 	}
 
 	/**
@@ -362,6 +357,185 @@ public final class SQL
 	}
 
 	/**
+	 * Performs a series of update queries on a single statement on a connection and returns the batch result.
+	 * @param connection the connection to create a prepared statement and execute from.
+	 * @param query the query statement to execute.
+	 * @param parameterList the list of parameter sets to pass to the query for each update. 
+	 * @return the update result returned (usually number of rows affected and or generated ids).
+	 * @throws SQLRuntimeException if the query cannot be executed or the query causes an error.
+	 * @since [NOW]
+	 */
+	public static long[] getUpdateBatch(Connection connection, String query, Object[][] parameterList)
+	{
+		return getUpdateBatch(connection, query, SQLCallable.DEFAULT_BATCH_SIZE, Arrays.asList(parameterList));
+	}
+
+	/**
+	 * Performs a series of update queries on a single statement on a connection and returns the batch result.
+	 * @param connection the connection to create a prepared statement and execute from.
+	 * @param query the query statement to execute.
+	 * @param granularity the amount of statements to execute at a time. If 0 or less, no granularity.
+	 * @param parameterList the list of parameter sets to pass to the query for each update. 
+	 * @return the update result returned (usually number of rows affected and or generated ids).
+	 * @throws SQLRuntimeException if the query cannot be executed or the query causes an error.
+	 * @since [NOW]
+	 */
+	public static long[] getUpdateBatch(Connection connection, String query, int granularity, Object[][] parameterList)
+	{
+		return getUpdateBatch(connection, query, granularity, Arrays.asList(parameterList));
+	}
+
+	/**
+	 * Performs a series of update queries on a single statement on a connection and returns the batch result.
+	 * @param connection the connection to create a prepared statement and execute from.
+	 * @param query the query statement to execute.
+	 * @param parameterList the list of parameter sets to pass to the query for each update. 
+	 * @return the update result returned (usually number of rows affected and or generated ids).
+	 * @throws SQLRuntimeException if the query cannot be executed or the query causes an error.
+	 * @since [NOW]
+	 */
+	public static long[] getUpdateBatch(Connection connection, String query, Collection<Object[]> parameterList)
+	{
+		return getUpdateBatch(connection, query, SQLCallable.DEFAULT_BATCH_SIZE, parameterList);
+	}
+
+	/**
+	 * Performs a series of update queries on a single statement on a connection and returns the batch result.
+	 * @param connection the connection to create a prepared statement and execute from.
+	 * @param query the query statement to execute.
+	 * @param granularity the amount of statements to execute at a time. If 0 or less, no granularity.
+	 * @param parameterList the list of parameter sets to pass to the query for each update. 
+	 * @return the update result returned (usually number of rows affected and or generated ids).
+	 * @throws SQLRuntimeException if the query cannot be executed or the query causes an error.
+	 * @since [NOW]
+	 */
+	public static long[] getUpdateBatch(Connection connection, String query, int granularity, Collection<Object[]> parameterList)
+	{
+		try (PreparedStatement statement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS))
+		{
+			return callBatch(statement, granularity, parameterList);
+		}
+		catch (SQLException e)
+		{
+			throw new SQLRuntimeException(e);
+		}
+	}
+
+	/**
+	 * Performs an update query (INSERT, DELETE, UPDATE, or other commands that do not return rows)
+	 * and extracts each set of result data into a SQLResult.
+	 * <p>This is usually more efficient than multiple calls of {@link #getUpdateResult(Connection, String, Object...)},
+	 * since it uses the same prepared statement. However, it is not as efficient as {@link #getUpdateBatch(Connection, String, int, Collection)},
+	 * but for this method, you will get the generated ids in each result, if any.
+	 * @param connection the connection to create a prepared statement and execute from.
+	 * @param query the query statement to execute.
+	 * @param parameterList the list of parameter sets to pass to the query for each update. 
+	 * @return the list of update results returned, each corresponding to an update.
+	 * @throws SQLRuntimeException if the query cannot be executed or the query causes an error.
+	 */
+	public static SQLResult[] getUpdateBatchResult(Connection connection, String query, Object[][] parameterList)
+	{
+		return getUpdateBatchResult(connection, query, Arrays.asList(parameterList));
+	}
+	
+	/**
+	 * Performs an update query (INSERT, DELETE, UPDATE, or other commands that do not return rows)
+	 * and extracts each set of result data into a SQLResult.
+	 * <p>This is usually more efficient than multiple calls of {@link #getUpdateResult(Connection, String, Object...)},
+	 * since it uses the same prepared statement. However, it is not as efficient as {@link #getUpdateBatch(Connection, String, int, Collection)},
+	 * but for this method, you will get the generated ids in each result, if any.
+	 * @param connection the connection to create a prepared statement and execute from.
+	 * @param query the query statement to execute.
+	 * @param parameterList the list of parameter sets to pass to the query for each update. 
+	 * @return the list of update results returned, each corresponding to an update.
+	 * @throws SQLRuntimeException if the query cannot be executed or the query causes an error.
+	 */
+	public static SQLResult[] getUpdateBatchResult(Connection connection, String query, Collection<Object[]> parameterList)
+	{
+		try (PreparedStatement statement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS))
+		{
+			int i = 0;
+			SQLResult[] out = new SQLResult[parameterList.size()];
+			for (Object[] params : parameterList)
+				out[i++] = callStatement(statement, true, params);
+			return out;
+		}
+		catch (SQLException e)
+		{
+			throw new SQLRuntimeException(e);
+		}
+	}
+	
+	/**
+	 * Starts a transaction with a provided level.
+	 * <p>The connection gets {@link Connection#setAutoCommit(boolean)} called on it with a FALSE parameter,
+	 * and sets the transaction isolation level. These settings are restored when the transaction is 
+	 * finished via {@link Transaction#close()}, {@link Transaction#commit()}, or {@link Transaction#abort()}.
+	 * It is recommended to use an auto-closing mechanism to ensure that the transaction is completed and the connection transaction
+	 * state is restored, or else this connection will be left in a bad state!
+	 * @param connection the connection to create a prepared statement and execute from.
+	 * @param transactionLevel the transaction level to set on this transaction.
+	 * @return a new transaction.
+	 * @throws SQLException if this transaction could not be prepared.
+	 * @since [NOW]
+	 */
+	@SuppressWarnings("resource")
+	public static Transaction getTransaction(Connection connection, TransactionLevel transactionLevel) throws SQLException
+	{
+		return (new SQLConnection(connection)).startTransaction(transactionLevel);
+	}
+
+	/**
+	 * Starts a transaction with a provided level, performs actions on it, then auto-closes it.
+	 * <p>The connection gets {@link Connection#setAutoCommit(boolean)} called on it with a FALSE parameter,
+	 * and sets the transaction isolation level. These settings are restored when the transaction is 
+	 * finished via {@link Transaction#close()}, {@link Transaction#commit()}, or {@link Transaction#abort()}.
+	 * It is recommended to use an auto-closing mechanism to ensure that the transaction is completed and the connection transaction
+	 * state is restored.
+	 * @param connection the connection to create a prepared statement and execute from.
+	 * @param transactionLevel the transaction level to set on this transaction.
+	 * @param handler the consumer function that accepts the retrieved connection and returns a value.
+	 * @since [NOW]
+	 */
+	public static void getTransactionAnd(Connection connection, TransactionLevel transactionLevel, SQLTransactionConsumer handler)
+	{
+		try (Transaction transaction = getTransaction(connection, transactionLevel))
+		{
+			handler.accept(transaction);
+		}
+		catch (SQLException e)
+		{
+			throw new SQLRuntimeException(e);
+		}
+	}
+
+	/**
+	 * Starts a transaction with a provided level, performs actions on it, returns a value, then auto-closes it.
+	 * <p>The connection gets {@link Connection#setAutoCommit(boolean)} called on it with a FALSE parameter,
+	 * and sets the transaction isolation level. These settings are restored when the transaction is 
+	 * finished via {@link Transaction#close()}, {@link Transaction#commit()}, or {@link Transaction#abort()}.
+	 * It is recommended to use an auto-closing mechanism to ensure that the transaction is completed and the connection transaction
+	 * state is restored.
+	 * @param <R> the return type.
+	 * @param connection the connection to create a prepared statement and execute from.
+	 * @param transactionLevel the transaction level to set on this transaction.
+	 * @param handler the consumer function that accepts the retrieved connection and returns a value.
+	 * @return the return value of the handler function.
+	 * @since [NOW]
+	 */
+	public static <R> R getTransactionAnd(Connection connection, TransactionLevel transactionLevel, SQLTransactionFunction<R> handler)
+	{
+		try (Transaction transaction = getTransaction(connection, transactionLevel))
+		{
+			return handler.apply(transaction);
+		}
+		catch (SQLException e)
+		{
+			throw new SQLRuntimeException(e);
+		}
+	}
+
+	/**
 	 * Returns the names of the columns in a ResultSet in the order that they appear in the result.
 	 * @param set the ResultSet to get the columns from.
 	 * @return an array of all of the columns.
@@ -374,6 +548,84 @@ public final class SQL
 		for (int i = 0; i < out.length; i++)
 			out[i] = md.getColumnName(i+1);
 		return out;
+	}
+
+	/**
+	 * Creates new objects from the result set and sets the fields on them using row information.
+	 * The column names are pulled from the ResultSet metadata.
+	 * @param objectType the object type to instantiate.
+	 * @param resultSet the result set.
+	 * @return a new object with the relevant fields set.
+	 * @throws SQLException if a SQL exception occurs.
+	 * @throws ClassCastException if any incoming types cannot be converted.
+	 * @since [NOW]
+	 */
+	@SuppressWarnings("unchecked")
+	public static <T> T[] createObjectsFromResultSet(Class<T> objectType, ResultSet resultSet) throws SQLException
+	{
+		T[] out = null;
+		List<T> rows = null;
+
+		String[] columnNames = getAllColumnNamesFromResultSet(resultSet);
+		rows = new LinkedList<T>();
+		while (resultSet.next())
+			rows.add(createObjectFromResultRow(objectType, resultSet, columnNames));
+
+		rows.toArray(out = (T[])Array.newInstance(objectType, rows.size()));
+		return out;
+	}
+
+	/**
+	 * Creates a new object from the current result row and sets the fields on it using row information.
+	 * The column names are pulled from the metadata.
+	 * @param objectType the object type to instantiate.
+	 * @param resultSet the result set.
+	 * @return a new object with the relevant fields set.
+	 * @throws SQLException if a SQL exception occurs.
+	 * @throws ClassCastException if any incoming types cannot be converted.
+	 * @since [NOW]
+	 */
+	public static <T> T createObjectFromResultRow(Class<T> objectType, ResultSet resultSet) throws SQLException
+	{
+		return createObjectFromResultRow(objectType, resultSet, getAllColumnNamesFromResultSet(resultSet));
+	}
+
+	/**
+	 * Creates a new object from the current result row and sets the fields on it using row information.
+	 * @param objectType the object type to instantiate.
+	 * @param resultSet the result set.
+	 * @param columnNames the names of the columns in the set.
+	 * @return a new object with the relevant fields set.
+	 * @throws ArrayIndexOutOfBoundsException if the length of columnNames is less than the amount of columns in the set. 
+	 * @throws SQLException if a SQL exception occurs.
+	 * @throws ClassCastException if any incoming types cannot be converted.
+	 * @since [NOW], exposed as public.
+	 */
+	public static <T> T createObjectFromResultRow(Class<T> objectType, ResultSet resultSet, String[] columnNames) throws SQLException
+	{
+		T object = Utils.create(objectType);
+		SQLTypeProfileFactory.Profile<T> profile = getProfile(objectType);
+	
+		for (int i = 0; i < columnNames.length; i++)
+		{
+			String column = columnNames[i];
+	
+			SQLTypeProfileFactory.Profile.FieldInfo fieldInfo = null; 
+			SQLTypeProfileFactory.Profile.MethodInfo setterInfo = null;
+			
+			if ((fieldInfo = Utils.isNull(profile.getPublicFieldsByAlias().get(column), (profile.getPublicFieldsByName().get(column)))) != null)
+			{
+				Class<?> type = fieldInfo.getType();
+				Utils.setFieldValue(object, fieldInfo.getField(), createForType(column, resultSet.getObject(i + 1), type));
+			}
+			else if ((setterInfo = Utils.isNull(profile.getSetterMethodsByAlias().get(column), (profile.getSetterMethodsByName().get(column)))) != null)
+			{
+				Class<?> type = setterInfo.getType();
+				Utils.invokeBlind(setterInfo.getMethod(), object, createForType(column, resultSet.getObject(i + 1), type));
+			}
+		}
+	
+		return object;
 	}
 
 	/**
@@ -411,6 +663,94 @@ public final class SQL
 	}
 
 	/**
+	 * Performs a series of update queries on a single statement on a connection and returns the batch result, 
+	 * using a default batching amount ({@value SQLCallable#DEFAULT_BATCH_SIZE}).
+	 * @param statement the statement to execute.
+	 * @param parameterList the list of parameter sets to pass to the query for each update. 
+	 * @return the amount of affected rows of each of the updates, each index corresponding to the index of the set of parameters used.
+	 * 		May also return {@link Statement#SUCCESS_NO_INFO} or {@link Statement#EXECUTE_FAILED} per update.
+	 * @throws SQLException if a SQL exception occurs.
+	 * @since [NOW]
+	 */
+	public static long[] callBatch(PreparedStatement statement, Object[][] parameterList) throws SQLException
+	{
+		return callBatch(statement, SQLCallable.DEFAULT_BATCH_SIZE, parameterList);
+	}
+
+	/**
+	 * Performs a series of update queries on a single statement on a connection and returns the batch result.
+	 * @param statement the statement to execute.
+	 * @param granularity the amount of statements to execute at a time. If 0 or less, no granularity.
+	 * @param parameterList the list of parameter sets to pass to the query for each update. 
+	 * @return the amount of affected rows of each of the updates, each index corresponding to the index of the set of parameters used.
+	 * 		May also return {@link Statement#SUCCESS_NO_INFO} or {@link Statement#EXECUTE_FAILED} per update.
+	 * @throws SQLException if a SQL exception occurs.
+	 * @since [NOW]
+	 */
+	public static long[] callBatch(PreparedStatement statement, int granularity, Object[][] parameterList) throws SQLException
+	{
+		return callBatch(statement, granularity, Arrays.asList(parameterList));
+	}
+
+	/**
+	 * Performs a series of update queries on a single statement on a connection and returns the batch result, 
+	 * using a default batching amount ({@value SQLCallable#DEFAULT_BATCH_SIZE}).
+	 * @param statement the statement to execute.
+	 * @param parameterList the list of parameter sets to pass to the query for each update. 
+	 * @return the amount of affected rows of each of the updates, each index corresponding to the index of the set of parameters used.
+	 * 		May also return {@link Statement#SUCCESS_NO_INFO} or {@link Statement#EXECUTE_FAILED} per update.
+	 * @throws SQLException if a SQL exception occurs.
+	 * @since [NOW]
+	 */
+	public static long[] callBatch(PreparedStatement statement, Collection<Object[]> parameterList) throws SQLException
+	{
+		return callBatch(statement, SQLCallable.DEFAULT_BATCH_SIZE, parameterList);
+	}
+
+	/**
+	 * Performs a series of update queries on a single statement on a connection and returns the batch result.
+	 * @param statement the statement to execute.
+	 * @param granularity the amount of statements to execute at a time. If 0 or less, no granularity.
+	 * @param parameterList the list of parameter sets to pass to the query for each update. 
+	 * @return the amount of affected rows of each of the updates, each index corresponding to the index of the set of parameters used.
+	 * 		May also return {@link Statement#SUCCESS_NO_INFO} or {@link Statement#EXECUTE_FAILED} per update.
+	 * @throws SQLException if a SQL exception occurs.
+	 * @since [NOW]
+	 */
+	public static long[] callBatch(PreparedStatement statement, int granularity, Collection<Object[]> parameterList) throws SQLException
+	{
+		long[] out = new long[parameterList.size()];
+		int cursor = 0;
+		int batch = 0;
+	
+		for (Object[] parameters : parameterList)
+		{
+			int n = 1;
+			for (Object obj : parameters)
+				statement.setObject(n++, obj);
+			
+			statement.addBatch();
+			batch++;
+			
+			if (batch == granularity)
+			{
+				long[] execute = statement.executeLargeBatch();
+				System.arraycopy(execute, 0, out, cursor, execute.length);
+				cursor += execute.length;
+				batch = 0;
+			}
+		}
+		
+		if (batch != 0)
+		{
+			long[] execute = statement.executeLargeBatch();
+			System.arraycopy(execute, 0, out, cursor, execute.length);
+		}
+		
+		return out;
+	}
+
+	/**
 	 * Creates a new profile for a provided type.
 	 * Generated profiles are stored in memory, and retrieved again by class type.
 	 * <p>This method is thread-safe.
@@ -435,42 +775,6 @@ public final class SQL
 	private static <T> T createForType(String memberName, Object object, Class<T> targetType)
 	{
 		return DEFAULT_CONVERTER.createForType(memberName, object, targetType);
-	}
-
-	/**
-	 * Creates a new object from a result row and sets the fields on it using row information.
-	 * @param objectType the object type to instantiate.
-	 * @param resultSet the result set.
-	 * @param columnNames the names of the columns in the set.
-	 * @return a new object with the relevant fields set.
-	 * @throws SQLException if a SQL exception occurs.
-	 * @throws ClassCastException if any incoming types cannot be converted.
-	 */
-	private static <T> T createObjectFromResultRow(Class<T> objectType, ResultSet resultSet, String[] columnNames) throws SQLException
-	{
-		T object = Utils.create(objectType);
-		SQLTypeProfileFactory.Profile<T> profile = getProfile(objectType);
-	
-		for (int i = 0; i < columnNames.length; i++)
-		{
-			String column = columnNames[i];
-	
-			SQLTypeProfileFactory.Profile.FieldInfo fieldInfo = null; 
-			SQLTypeProfileFactory.Profile.MethodInfo setterInfo = null;
-			
-			if ((fieldInfo = Utils.isNull(profile.getPublicFieldsByAlias().get(column), (profile.getPublicFieldsByName().get(column)))) != null)
-			{
-				Class<?> type = fieldInfo.getType();
-				Utils.setFieldValue(object, fieldInfo.getField(), createForType(column, resultSet.getObject(i + 1), type));
-			}
-			else if ((setterInfo = Utils.isNull(profile.getSetterMethodsByAlias().get(column), (profile.getSetterMethodsByName().get(column)))) != null)
-			{
-				Class<?> type = setterInfo.getType();
-				Utils.invokeBlind(setterInfo.getMethod(), object, createForType(column, resultSet.getObject(i + 1), type));
-			}
-		}
-	
-		return object;
 	}
 
 	/**
@@ -523,7 +827,7 @@ public final class SQL
 		 * Reflect.creates a new instance of an object for placement in a POJO or elsewhere.
 		 * @param <T> the return object type.
 		 * @param memberName the name of the member that is being converted (for reporting). 
-		 * @param object the object to convert to another object
+		 * @param object the object to convert to another object.
 		 * @param targetType the target class type to convert to, if the types differ.
 		 * @return a suitable object of type <code>targetType</code>. 
 		 * @throws ClassCastException if the incoming type cannot be converted.
@@ -1118,7 +1422,7 @@ public final class SQL
 			try (Reader reader = clob.getCharacterStream()) 
 			{
 				sw = new StringWriter();
-				char[] charBuffer = new char[1024 * 8];
+				char[] charBuffer = CHARBUFFER.get();
 				int cbuf = 0;
 				while ((cbuf = reader.read(charBuffer)) > 0)
 					sw.write(charBuffer, 0, cbuf);
@@ -1147,7 +1451,7 @@ public final class SQL
 			try (InputStream in = blob.getBinaryStream()) 
 			{
 				bos = new ByteArrayOutputStream();
-				byte[] buffer = new byte[65536];
+				byte[] buffer = BYTEBUFFER.get();
 				int buf = 0;
 				while ((buf = in.read(buffer)) > 0)
 					bos.write(buffer, 0, buf);

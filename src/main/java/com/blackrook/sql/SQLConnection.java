@@ -10,12 +10,15 @@ package com.blackrook.sql;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Savepoint;
+import java.util.Collection;
 
 import com.blackrook.sql.util.SQLTransactionConsumer;
 import com.blackrook.sql.util.SQLTransactionFunction;
 
 /**
  * A wrapped SQL connection for ease-of-querying.
+ * Closing this connection closes the wrapped connection - in some cases, like when
+ * wrapping connections from another pool or manager, this may be undesirable.
  * @author Matthew Tropiano
  */
 public class SQLConnection implements SQLCallable, AutoCloseable
@@ -85,7 +88,7 @@ public class SQLConnection implements SQLCallable, AutoCloseable
 	}
 
 	/**
-	 * Starts a transaction with an provided level.
+	 * Starts a transaction with a provided level.
 	 * <p>While this transaction is active, calls to this connection's query handling methods will throw an {@link IllegalStateException}.
 	 * <p>The connection gets {@link Connection#setAutoCommit(boolean)} called on it with a FALSE parameter,
 	 * and sets the transaction isolation level. These settings are restored when the transaction is 
@@ -102,7 +105,7 @@ public class SQLConnection implements SQLCallable, AutoCloseable
 	}
 
 	/**
-	 * Starts a transaction with an provided level, performs actions on it, then auto-closes it.
+	 * Starts a transaction with a provided level, performs actions on it, then auto-closes it.
 	 * <p>While this transaction is active, calls to this connection's query handling methods will throw an {@link IllegalStateException}.
 	 * <p>The connection gets {@link Connection#setAutoCommit(boolean)} called on it with a FALSE parameter,
 	 * and sets the transaction isolation level. These settings are restored when the transaction is 
@@ -122,7 +125,7 @@ public class SQLConnection implements SQLCallable, AutoCloseable
 	}
 
 	/**
-	 * Starts a transaction with an provided level, performs actions on it, returns a value, then auto-closes it.
+	 * Starts a transaction with a provided level, performs actions on it, returns a value, then auto-closes it.
 	 * <p>While this transaction is active, calls to this connection's query handling methods will throw an {@link IllegalStateException}.
 	 * <p>The connection gets {@link Connection#setAutoCommit(boolean)} called on it with a FALSE parameter,
 	 * and sets the transaction isolation level. These settings are restored when the transaction is 
@@ -201,6 +204,22 @@ public class SQLConnection implements SQLCallable, AutoCloseable
 		if (inTransaction())
 			throw new IllegalStateException("A transaction is active and must be closed before this can be called.");
 		return SQL.getUpdateResult(connection, query, parameters);
+	}
+
+	@Override
+	public long[] getUpdateBatch(String query, int granularity, Collection<Object[]> parameterList) 
+	{
+		if (inTransaction())
+			throw new IllegalStateException("A transaction is active and must be closed before this can be called.");
+		return SQL.getUpdateBatch(connection, query, granularity, parameterList);
+	}
+
+	@Override
+	public SQLResult[] getUpdateBatchResult(String query, Collection<Object[]> parameterList) 
+	{
+		if (inTransaction())
+			throw new IllegalStateException("A transaction is active and must be closed before this can be called.");
+		return SQL.getUpdateBatchResult(connection, query, parameterList);
 	}
 
 	/**
@@ -289,6 +308,18 @@ public class SQLConnection implements SQLCallable, AutoCloseable
 		public SQLResult getUpdateResult(String query, Object... parameters)
 		{
 			return SQL.getUpdateResult(connection, query, parameters);
+		}
+
+		@Override
+		public long[] getUpdateBatch(String query, int granularity, Collection<Object[]> parameterList) 
+		{
+			return SQL.getUpdateBatch(connection, query, granularity, parameterList);
+		}
+
+		@Override
+		public SQLResult[] getUpdateBatchResult(String query, Collection<Object[]> parameterList)
+		{
+			return SQL.getUpdateBatchResult(connection, query, parameterList);
 		}
 
 		/**

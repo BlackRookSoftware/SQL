@@ -7,6 +7,9 @@
  ******************************************************************************/
 package com.blackrook.sql;
 
+import java.util.Arrays;
+import java.util.Collection;
+
 import com.blackrook.sql.util.SQLRuntimeException;
 
 /**
@@ -15,6 +18,9 @@ import com.blackrook.sql.util.SQLRuntimeException;
  */
 public interface SQLCallable
 {
+	/** Default batch size. */
+	static final int DEFAULT_BATCH_SIZE = 1024;
+
 	/**
 	 * Performs a query and extracts the first row result into a single {@link SQLRow}.
 	 * @param query the query statement to execute.
@@ -220,5 +226,85 @@ public interface SQLCallable
 	 * @throws SQLRuntimeException if the query cannot be executed or the query causes an error.
 	 */
 	SQLResult getUpdateResult(String query, Object ... parameters);
+	
+	/**
+	 * Performs a series of update queries on a single statement on a connection and returns the batch result.
+	 * @param query the query statement to execute.
+	 * @param parameterList the list of parameter sets to pass to the query for each update. 
+	 * @return the update result returned (usually number of rows affected and or generated ids).
+	 * @throws SQLRuntimeException if the query cannot be executed or the query causes an error.
+	 * @since [NOW]
+	 */
+	default long[] getUpdateBatch(String query, Object[][] parameterList)
+	{
+		return getUpdateBatch(query, DEFAULT_BATCH_SIZE, Arrays.asList(parameterList));
+	}
+	
+	/**
+	 * Performs a series of update queries on a single statement on a connection and returns the batch result.
+	 * @param query the query statement to execute.
+	 * @param granularity the amount of statements to execute at a time. If 0 or less, no granularity.
+	 * @param parameterList the list of parameter sets to pass to the query for each update. 
+	 * @return the update result returned (usually number of rows affected and or generated ids).
+	 * @throws SQLRuntimeException if the query cannot be executed or the query causes an error.
+	 * @since [NOW]
+	 */
+	default long[] getUpdateBatch(String query, int granularity, Object[][] parameterList)
+	{
+		return getUpdateBatch(query, granularity, Arrays.asList(parameterList));
+	}
+	
+	/**
+	 * Performs a series of update queries on a single statement on a connection and returns the batch result.
+	 * @param query the query statement to execute.
+	 * @param parameterList the list of parameter sets to pass to the query for each update. 
+	 * @return the update result returned (usually number of rows affected and or generated ids).
+	 * @throws SQLRuntimeException if the query cannot be executed or the query causes an error.
+	 * @since [NOW]
+	 */
+	default long[] getUpdateBatch(String query, Collection<Object[]> parameterList)
+	{
+		return getUpdateBatch(query, DEFAULT_BATCH_SIZE, parameterList);
+	}
+	
+	/**
+	 * Performs a series of update queries on a single statement on a connection and returns the batch result.
+	 * @param query the query statement to execute.
+	 * @param granularity the amount of statements to execute at a time. If 0 or less, no granularity.
+	 * @param parameterList the list of parameter sets to pass to the query for each update. 
+	 * @return the update result returned (usually number of rows affected and or generated ids).
+	 * @throws SQLRuntimeException if the query cannot be executed or the query causes an error.
+	 * @since [NOW]
+	 */
+	long[] getUpdateBatch(String query, int granularity, Collection<Object[]> parameterList);
+
+	/**
+	 * Performs an update query (INSERT, DELETE, UPDATE, or other commands that do not return rows)
+	 * and extracts each set of result data into a SQLResult.
+	 * <p>This is usually more efficient than multiple calls of {@link #getUpdateResult(String, Object...)},
+	 * since it uses the same prepared statement. However, it is not as efficient as {@link #getUpdateBatch(String, int, Collection)},
+	 * but for this method, you will get the generated ids in each result, if any.
+	 * @param query the query statement to execute.
+	 * @param parameterList the list of parameter sets to pass to the query for each update. 
+	 * @return the list of update results returned, each corresponding to an update.
+	 * @throws SQLRuntimeException if the query cannot be executed or the query causes an error.
+	 */
+	default SQLResult[] getUpdateBatchResult(String query, Object[][] parameterList)
+	{
+		return getUpdateBatchResult(query, Arrays.asList(parameterList));
+	}
+	
+	/**
+	 * Performs an update query (INSERT, DELETE, UPDATE, or other commands that do not return rows)
+	 * and extracts each set of result data into a SQLResult.
+	 * <p>This is usually more efficient than multiple calls of {@link #getUpdateResult(String, Object...)},
+	 * since it uses the same prepared statement. However, it is not as efficient as {@link #getUpdateBatch(String, int, Collection)},
+	 * but for this method, you will get the generated ids in each result, if any.
+	 * @param query the query statement to execute.
+	 * @param parameterList the list of parameter sets to pass to the query for each update. 
+	 * @return the list of update results returned, each corresponding to an update.
+	 * @throws SQLRuntimeException if the query cannot be executed or the query causes an error.
+	 */
+	SQLResult[] getUpdateBatchResult(String query, Collection<Object[]> parameterList);
 	
 }
