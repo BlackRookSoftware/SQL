@@ -199,7 +199,10 @@ public final class SQL
 
 			try (ResultSet resultSet = statement.executeQuery())
 			{
-				return createObjectFromResultRow(type, resultSet);
+				if (resultSet.next())
+					return createObjectFromResultRow(type, resultSet);
+				else
+					return null;
 			}
 		}
 		catch (SQLException e)
