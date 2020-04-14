@@ -233,7 +233,7 @@ public interface SQLCallable
 	 * @param parameterList the list of parameter sets to pass to the query for each update. 
 	 * @return the update result returned (usually number of rows affected and or generated ids).
 	 * @throws SQLRuntimeException if the query cannot be executed or the query causes an error.
-	 * @since [NOW]
+	 * @since 1.1.0
 	 */
 	default long[] getUpdateBatch(String query, Object[][] parameterList)
 	{
@@ -247,7 +247,7 @@ public interface SQLCallable
 	 * @param parameterList the list of parameter sets to pass to the query for each update. 
 	 * @return the update result returned (usually number of rows affected and or generated ids).
 	 * @throws SQLRuntimeException if the query cannot be executed or the query causes an error.
-	 * @since [NOW]
+	 * @since 1.1.0
 	 */
 	default long[] getUpdateBatch(String query, int granularity, Object[][] parameterList)
 	{
@@ -260,7 +260,7 @@ public interface SQLCallable
 	 * @param parameterList the list of parameter sets to pass to the query for each update. 
 	 * @return the update result returned (usually number of rows affected and or generated ids).
 	 * @throws SQLRuntimeException if the query cannot be executed or the query causes an error.
-	 * @since [NOW]
+	 * @since 1.1.0
 	 */
 	default long[] getUpdateBatch(String query, Collection<Object[]> parameterList)
 	{
@@ -274,7 +274,7 @@ public interface SQLCallable
 	 * @param parameterList the list of parameter sets to pass to the query for each update. 
 	 * @return the update result returned (usually number of rows affected and or generated ids).
 	 * @throws SQLRuntimeException if the query cannot be executed or the query causes an error.
-	 * @since [NOW]
+	 * @since 1.1.0
 	 */
 	long[] getUpdateBatch(String query, int granularity, Collection<Object[]> parameterList);
 
@@ -288,6 +288,7 @@ public interface SQLCallable
 	 * @param parameterList the list of parameter sets to pass to the query for each update. 
 	 * @return the list of update results returned, each corresponding to an update.
 	 * @throws SQLRuntimeException if the query cannot be executed or the query causes an error.
+	 * @since 1.1.0
 	 */
 	default SQLResult[] getUpdateBatchResult(String query, Object[][] parameterList)
 	{
@@ -304,6 +305,7 @@ public interface SQLCallable
 	 * @param parameterList the list of parameter sets to pass to the query for each update. 
 	 * @return the list of update results returned, each corresponding to an update.
 	 * @throws SQLRuntimeException if the query cannot be executed or the query causes an error.
+	 * @since 1.1.0
 	 */
 	SQLResult[] getUpdateBatchResult(String query, Collection<Object[]> parameterList);
 	

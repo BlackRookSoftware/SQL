@@ -30,7 +30,7 @@ public class SQLRuntimeException extends RuntimeException
 	/**
 	 * Creates a new SQLRuntimeException from an {@link IOException}.
 	 * @param e the exception to wrap.
-	 * @since [NOW]
+	 * @since 1.1.0
 	 */
 	public SQLRuntimeException(IOException e)
 	{
@@ -41,7 +41,7 @@ public class SQLRuntimeException extends RuntimeException
 	 * Creates a new SQLRuntimeException from a {@link SQLException}.
 	 * @param message the message.
 	 * @param e the exception to wrap.
-	 * @since [NOW]
+	 * @since 1.1.0
 	 */
 	public SQLRuntimeException(String message, SQLException e)
 	{
@@ -52,7 +52,7 @@ public class SQLRuntimeException extends RuntimeException
 	 * Creates a new SQLRuntimeException from an {@link IOException}.
 	 * @param message the message.
 	 * @param e the exception to wrap.
-	 * @since [NOW]
+	 * @since 1.1.0
 	 */
 	public SQLRuntimeException(String message, IOException e)
 	{

@@ -363,7 +363,8 @@ public final class SQL
 	 * @param parameterList the list of parameter sets to pass to the query for each update. 
 	 * @return the update result returned (usually number of rows affected and or generated ids).
 	 * @throws SQLRuntimeException if the query cannot be executed or the query causes an error.
-	 * @since [NOW]
+	 * @throws UnsupportedOperationException if not implemented by the driver.
+	 * @since 1.1.0
 	 */
 	public static long[] getUpdateBatch(Connection connection, String query, Object[][] parameterList)
 	{
@@ -378,7 +379,8 @@ public final class SQL
 	 * @param parameterList the list of parameter sets to pass to the query for each update. 
 	 * @return the update result returned (usually number of rows affected and or generated ids).
 	 * @throws SQLRuntimeException if the query cannot be executed or the query causes an error.
-	 * @since [NOW]
+	 * @throws UnsupportedOperationException if not implemented by the driver.
+	 * @since 1.1.0
 	 */
 	public static long[] getUpdateBatch(Connection connection, String query, int granularity, Object[][] parameterList)
 	{
@@ -392,7 +394,8 @@ public final class SQL
 	 * @param parameterList the list of parameter sets to pass to the query for each update. 
 	 * @return the update result returned (usually number of rows affected and or generated ids).
 	 * @throws SQLRuntimeException if the query cannot be executed or the query causes an error.
-	 * @since [NOW]
+	 * @throws UnsupportedOperationException if not implemented by the driver.
+	 * @since 1.1.0
 	 */
 	public static long[] getUpdateBatch(Connection connection, String query, Collection<Object[]> parameterList)
 	{
@@ -407,7 +410,8 @@ public final class SQL
 	 * @param parameterList the list of parameter sets to pass to the query for each update. 
 	 * @return the update result returned (usually number of rows affected and or generated ids).
 	 * @throws SQLRuntimeException if the query cannot be executed or the query causes an error.
-	 * @since [NOW]
+	 * @throws UnsupportedOperationException if not implemented by the driver.
+	 * @since 1.1.0
 	 */
 	public static long[] getUpdateBatch(Connection connection, String query, int granularity, Collection<Object[]> parameterList)
 	{
@@ -432,6 +436,7 @@ public final class SQL
 	 * @param parameterList the list of parameter sets to pass to the query for each update. 
 	 * @return the list of update results returned, each corresponding to an update.
 	 * @throws SQLRuntimeException if the query cannot be executed or the query causes an error.
+	 * @since 1.1.0
 	 */
 	public static SQLResult[] getUpdateBatchResult(Connection connection, String query, Object[][] parameterList)
 	{
@@ -449,6 +454,7 @@ public final class SQL
 	 * @param parameterList the list of parameter sets to pass to the query for each update. 
 	 * @return the list of update results returned, each corresponding to an update.
 	 * @throws SQLRuntimeException if the query cannot be executed or the query causes an error.
+	 * @since 1.1.0
 	 */
 	public static SQLResult[] getUpdateBatchResult(Connection connection, String query, Collection<Object[]> parameterList)
 	{
@@ -477,7 +483,7 @@ public final class SQL
 	 * @param transactionLevel the transaction level to set on this transaction.
 	 * @return a new transaction.
 	 * @throws SQLException if this transaction could not be prepared.
-	 * @since [NOW]
+	 * @since 1.1.0
 	 */
 	@SuppressWarnings("resource")
 	public static Transaction getTransaction(Connection connection, TransactionLevel transactionLevel) throws SQLException
@@ -495,7 +501,7 @@ public final class SQL
 	 * @param connection the connection to create a prepared statement and execute from.
 	 * @param transactionLevel the transaction level to set on this transaction.
 	 * @param handler the consumer function that accepts the retrieved connection and returns a value.
-	 * @since [NOW]
+	 * @since 1.1.0
 	 */
 	public static void getTransactionAnd(Connection connection, TransactionLevel transactionLevel, SQLTransactionConsumer handler)
 	{
@@ -521,7 +527,7 @@ public final class SQL
 	 * @param transactionLevel the transaction level to set on this transaction.
 	 * @param handler the consumer function that accepts the retrieved connection and returns a value.
 	 * @return the return value of the handler function.
-	 * @since [NOW]
+	 * @since 1.1.0
 	 */
 	public static <R> R getTransactionAnd(Connection connection, TransactionLevel transactionLevel, SQLTransactionFunction<R> handler)
 	{
@@ -558,7 +564,7 @@ public final class SQL
 	 * @return a new object with the relevant fields set.
 	 * @throws SQLException if a SQL exception occurs.
 	 * @throws ClassCastException if any incoming types cannot be converted.
-	 * @since [NOW]
+	 * @since 1.1.0
 	 */
 	@SuppressWarnings("unchecked")
 	public static <T> T[] createObjectsFromResultSet(Class<T> objectType, ResultSet resultSet) throws SQLException
@@ -583,7 +589,7 @@ public final class SQL
 	 * @return a new object with the relevant fields set.
 	 * @throws SQLException if a SQL exception occurs.
 	 * @throws ClassCastException if any incoming types cannot be converted.
-	 * @since [NOW]
+	 * @since 1.1.0
 	 */
 	public static <T> T createObjectFromResultRow(Class<T> objectType, ResultSet resultSet) throws SQLException
 	{
@@ -599,7 +605,7 @@ public final class SQL
 	 * @throws ArrayIndexOutOfBoundsException if the length of columnNames is less than the amount of columns in the set. 
 	 * @throws SQLException if a SQL exception occurs.
 	 * @throws ClassCastException if any incoming types cannot be converted.
-	 * @since [NOW], exposed as public.
+	 * @since 1.1.0, exposed as public.
 	 */
 	public static <T> T createObjectFromResultRow(Class<T> objectType, ResultSet resultSet, String[] columnNames) throws SQLException
 	{
@@ -670,7 +676,8 @@ public final class SQL
 	 * @return the amount of affected rows of each of the updates, each index corresponding to the index of the set of parameters used.
 	 * 		May also return {@link Statement#SUCCESS_NO_INFO} or {@link Statement#EXECUTE_FAILED} per update.
 	 * @throws SQLException if a SQL exception occurs.
-	 * @since [NOW]
+	 * @throws UnsupportedOperationException if not implemented by the driver.
+	 * @since 1.1.0
 	 */
 	public static long[] callBatch(PreparedStatement statement, Object[][] parameterList) throws SQLException
 	{
@@ -685,7 +692,8 @@ public final class SQL
 	 * @return the amount of affected rows of each of the updates, each index corresponding to the index of the set of parameters used.
 	 * 		May also return {@link Statement#SUCCESS_NO_INFO} or {@link Statement#EXECUTE_FAILED} per update.
 	 * @throws SQLException if a SQL exception occurs.
-	 * @since [NOW]
+	 * @throws UnsupportedOperationException if not implemented by the driver.
+	 * @since 1.1.0
 	 */
 	public static long[] callBatch(PreparedStatement statement, int granularity, Object[][] parameterList) throws SQLException
 	{
@@ -700,7 +708,8 @@ public final class SQL
 	 * @return the amount of affected rows of each of the updates, each index corresponding to the index of the set of parameters used.
 	 * 		May also return {@link Statement#SUCCESS_NO_INFO} or {@link Statement#EXECUTE_FAILED} per update.
 	 * @throws SQLException if a SQL exception occurs.
-	 * @since [NOW]
+	 * @throws UnsupportedOperationException if not implemented by the driver.
+	 * @since 1.1.0
 	 */
 	public static long[] callBatch(PreparedStatement statement, Collection<Object[]> parameterList) throws SQLException
 	{
@@ -715,7 +724,8 @@ public final class SQL
 	 * @return the amount of affected rows of each of the updates, each index corresponding to the index of the set of parameters used.
 	 * 		May also return {@link Statement#SUCCESS_NO_INFO} or {@link Statement#EXECUTE_FAILED} per update.
 	 * @throws SQLException if a SQL exception occurs.
-	 * @since [NOW]
+	 * @throws UnsupportedOperationException if not implemented by the driver.
+	 * @since 1.1.0
 	 */
 	public static long[] callBatch(PreparedStatement statement, int granularity, Collection<Object[]> parameterList) throws SQLException
 	{
