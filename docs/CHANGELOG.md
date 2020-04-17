@@ -3,6 +3,12 @@ SQL (C) Black Rook Software
 by Matt Tropiano et al. (see AUTHORS.txt)
 
 
+Changed in 1.1.1
+----------------
+
+- `Fixed` Sometimes a generated id comes back as *any* type in a row without auto-generation.
+
+
 Changed in 1.1.0
 ----------------
 

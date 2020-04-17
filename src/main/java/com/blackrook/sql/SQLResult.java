@@ -26,7 +26,7 @@ public class SQLResult implements Iterable<SQLRow>
 	/** Rows affected or returned in the query. */
 	protected int rowCount;
 	/** Next id, if generated. */
-	protected long[] nextId;
+	protected Object[] nextId;
 	/** Was this an update query? */
 	protected boolean update;
 	/** List of rows of associative data. */
@@ -46,10 +46,10 @@ public class SQLResult implements Iterable<SQLRow>
 		while (genKeys.next())
 			vect.add(genKeys.getLong(1));
 		
-		this.nextId = new long[vect.size()];
+		this.nextId = new Object[vect.size()];
 		int x = 0;
-		for (long lng : vect)
-			this.nextId[x++] = lng; 
+		for (Object obj : vect)
+			this.nextId[x++] = obj; 
 	}
 
 	/**
@@ -116,7 +116,7 @@ public class SQLResult implements Iterable<SQLRow>
 	/**
 	 * @return the generated id from the last query, if any, or null if none.
 	 */
-	public Long getId()
+	public Object getId()
 	{
 		return nextId.length > 0 ? nextId[0] : null;
 	}
@@ -124,7 +124,7 @@ public class SQLResult implements Iterable<SQLRow>
 	/**
 	 * @return the list of generated ids from the last query.
 	 */
-	public long[] getIds()
+	public Object[] getIds()
 	{
 		return nextId;
 	}
