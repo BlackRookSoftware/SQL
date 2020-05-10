@@ -207,11 +207,19 @@ public class SQLConnection implements SQLCallable, AutoCloseable
 	}
 
 	@Override
-	public long[] getUpdateBatch(String query, int granularity, Collection<Object[]> parameterList) 
+	public int[] getUpdateBatch(String query, int granularity, Collection<Object[]> parameterList) 
 	{
 		if (inTransaction())
 			throw new IllegalStateException("A transaction is active and must be closed before this can be called.");
 		return SQL.getUpdateBatch(connection, query, granularity, parameterList);
+	}
+
+	@Override
+	public long[] getUpdateLargeBatch(String query, int granularity, Collection<Object[]> parameterList) 
+	{
+		if (inTransaction())
+			throw new IllegalStateException("A transaction is active and must be closed before this can be called.");
+		return SQL.getUpdateLargeBatch(connection, query, granularity, parameterList);
 	}
 
 	@Override
@@ -311,9 +319,15 @@ public class SQLConnection implements SQLCallable, AutoCloseable
 		}
 
 		@Override
-		public long[] getUpdateBatch(String query, int granularity, Collection<Object[]> parameterList) 
+		public int[] getUpdateBatch(String query, int granularity, Collection<Object[]> parameterList) 
 		{
 			return SQL.getUpdateBatch(connection, query, granularity, parameterList);
+		}
+
+		@Override
+		public long[] getUpdateLargeBatch(String query, int granularity, Collection<Object[]> parameterList) 
+		{
+			return SQL.getUpdateLargeBatch(connection, query, granularity, parameterList);
 		}
 
 		@Override

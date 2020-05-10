@@ -3,6 +3,12 @@ SQL (C) Black Rook Software
 by Matt Tropiano et al. (see AUTHORS.txt)
 
 
+Changed in 1.2.0
+----------------
+
+- `Added` "Large" batch calls to separate from "small" batch calls - some Drivers do not implement "large" batches.
+
+
 Changed in 1.1.1
 ----------------
 

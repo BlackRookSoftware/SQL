@@ -234,8 +234,9 @@ public interface SQLCallable
 	 * @return the update result returned (usually number of rows affected and or generated ids).
 	 * @throws SQLRuntimeException if the query cannot be executed or the query causes an error.
 	 * @since 1.1.0
+	 * @since 1.2.0, returns <code>int[]</code>. See {@link #getUpdateLargeBatch(String, Object[][])} for <code>long[]</code>.
 	 */
-	default long[] getUpdateBatch(String query, Object[][] parameterList)
+	default int[] getUpdateBatch(String query, Object[][] parameterList)
 	{
 		return getUpdateBatch(query, DEFAULT_BATCH_SIZE, Arrays.asList(parameterList));
 	}
@@ -248,8 +249,9 @@ public interface SQLCallable
 	 * @return the update result returned (usually number of rows affected and or generated ids).
 	 * @throws SQLRuntimeException if the query cannot be executed or the query causes an error.
 	 * @since 1.1.0
+	 * @since 1.2.0, returns <code>int[]</code>. See {@link #getUpdateLargeBatch(String, int, Object[][])} for <code>long[]</code>.
 	 */
-	default long[] getUpdateBatch(String query, int granularity, Object[][] parameterList)
+	default int[] getUpdateBatch(String query, int granularity, Object[][] parameterList)
 	{
 		return getUpdateBatch(query, granularity, Arrays.asList(parameterList));
 	}
@@ -261,8 +263,9 @@ public interface SQLCallable
 	 * @return the update result returned (usually number of rows affected and or generated ids).
 	 * @throws SQLRuntimeException if the query cannot be executed or the query causes an error.
 	 * @since 1.1.0
+	 * @since 1.2.0, returns <code>int[]</code>. See {@link #getUpdateLargeBatch(String, Collection)} for <code>long[]</code>.
 	 */
-	default long[] getUpdateBatch(String query, Collection<Object[]> parameterList)
+	default int[] getUpdateBatch(String query, Collection<Object[]> parameterList)
 	{
 		return getUpdateBatch(query, DEFAULT_BATCH_SIZE, parameterList);
 	}
@@ -275,8 +278,60 @@ public interface SQLCallable
 	 * @return the update result returned (usually number of rows affected and or generated ids).
 	 * @throws SQLRuntimeException if the query cannot be executed or the query causes an error.
 	 * @since 1.1.0
+	 * @since 1.2.0, returns <code>int[]</code>. See {@link #getUpdateLargeBatch(String, int, Collection)} for <code>long[]</code>.
 	 */
-	long[] getUpdateBatch(String query, int granularity, Collection<Object[]> parameterList);
+	int[] getUpdateBatch(String query, int granularity, Collection<Object[]> parameterList);
+
+	/**
+	 * Performs a series of update queries on a single statement on a connection and returns the batch result.
+	 * @param query the query statement to execute.
+	 * @param parameterList the list of parameter sets to pass to the query for each update. 
+	 * @return the update result returned (usually number of rows affected and or generated ids).
+	 * @throws SQLRuntimeException if the query cannot be executed or the query causes an error.
+	 * @since 1.2.0
+	 */
+	default long[] getUpdateLargeBatch(String query, Object[][] parameterList)
+	{
+		return getUpdateLargeBatch(query, DEFAULT_BATCH_SIZE, Arrays.asList(parameterList));
+	}
+	
+	/**
+	 * Performs a series of update queries on a single statement on a connection and returns the batch result.
+	 * @param query the query statement to execute.
+	 * @param granularity the amount of statements to execute at a time. If 0 or less, no granularity.
+	 * @param parameterList the list of parameter sets to pass to the query for each update. 
+	 * @return the update result returned (usually number of rows affected and or generated ids).
+	 * @throws SQLRuntimeException if the query cannot be executed or the query causes an error.
+	 * @since 1.2.0
+	 */
+	default long[] getUpdateLargeBatch(String query, int granularity, Object[][] parameterList)
+	{
+		return getUpdateLargeBatch(query, granularity, Arrays.asList(parameterList));
+	}
+	
+	/**
+	 * Performs a series of update queries on a single statement on a connection and returns the batch result.
+	 * @param query the query statement to execute.
+	 * @param parameterList the list of parameter sets to pass to the query for each update. 
+	 * @return the update result returned (usually number of rows affected and or generated ids).
+	 * @throws SQLRuntimeException if the query cannot be executed or the query causes an error.
+	 * @since 1.2.0
+	 */
+	default long[] getUpdateLargeBatch(String query, Collection<Object[]> parameterList)
+	{
+		return getUpdateLargeBatch(query, DEFAULT_BATCH_SIZE, parameterList);
+	}
+	
+	/**
+	 * Performs a series of update queries on a single statement on a connection and returns the batch result.
+	 * @param query the query statement to execute.
+	 * @param granularity the amount of statements to execute at a time. If 0 or less, no granularity.
+	 * @param parameterList the list of parameter sets to pass to the query for each update. 
+	 * @return the update result returned (usually number of rows affected and or generated ids).
+	 * @throws SQLRuntimeException if the query cannot be executed or the query causes an error.
+	 * @since 1.2.0
+	 */
+	long[] getUpdateLargeBatch(String query, int granularity, Collection<Object[]> parameterList);
 
 	/**
 	 * Performs an update query (INSERT, DELETE, UPDATE, or other commands that do not return rows)
