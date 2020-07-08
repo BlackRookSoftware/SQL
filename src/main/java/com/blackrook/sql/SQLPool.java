@@ -35,9 +35,6 @@ public class SQLPool implements AutoCloseable
 	/** List of used connections. */
 	private final HashSet<SQLConnection> usedConnections;
 	
-	/** Connection pool mutex. */
-	private final Object POOLMUTEX = new Object();
-	
 	/**
 	 * Creates a new connection pool from a {@link SQLConnector}.
 	 * @param connector the connector to use.
@@ -156,7 +153,7 @@ public class SQLPool implements AutoCloseable
 	 */
 	public SQLConnection getAvailableConnection(long waitMillis) throws InterruptedException, TimeoutException, SQLException
 	{
-		synchronized (POOLMUTEX)
+		synchronized (availableConnections)
 		{
 			if (availableConnections.isEmpty())
 			{
@@ -216,7 +213,7 @@ public class SQLPool implements AutoCloseable
 		if (connection.inTransaction())
 			connection.endTransaction();
 		
-		synchronized (POOLMUTEX)
+		synchronized (availableConnections)
 		{
 			usedConnections.remove(connection);
 			availableConnections.add(connection);
@@ -230,7 +227,7 @@ public class SQLPool implements AutoCloseable
 	@Override
 	public void close()
 	{
-		synchronized (POOLMUTEX)
+		synchronized (availableConnections)
 		{
 			Iterator<SQLConnection> it = usedConnections.iterator();
 			while (it.hasNext())

@@ -3,6 +3,12 @@ SQL (C) Black Rook Software
 by Matt Tropiano et al. (see AUTHORS.txt)
 
 
+Changed in 1.2.2
+----------------
+
+- `Fixed` Releasing a pooled connection did not work. Whoops!
+
+
 Changed in 1.2.1
 ----------------
 
