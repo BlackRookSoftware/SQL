@@ -41,8 +41,7 @@ public class SQLResult implements Iterable<SQLRow>
 		this.update = true;
 		this.rowCount = rowsAffected;
 		this.rows = null;
-		
-		List<Long> vect = new ArrayList<Long>();
+		List<Object> vect = new ArrayList<Object>();
 		while (genKeys.next())
 			vect.add(genKeys.getLong(1));
 		

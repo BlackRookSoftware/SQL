@@ -3,6 +3,13 @@ SQL (C) Black Rook Software
 by Matt Tropiano et al. (see AUTHORS.txt)
 
 
+Changed in 1.2.1
+----------------
+
+- `Fixed` Updates did not fetch ids properly with DBs that use non-numeric primary keys.
+- `Fixed` Removed redundant NClob checking (in places where Clobs are checked for).
+
+
 Changed in 1.2.0
 ----------------
 

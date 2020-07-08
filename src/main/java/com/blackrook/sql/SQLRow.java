@@ -14,7 +14,6 @@ import java.io.Reader;
 import java.io.StringWriter;
 import java.sql.Blob;
 import java.sql.Clob;
-import java.sql.NClob;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -60,8 +59,6 @@ public class SQLRow
 			if (sqlobj instanceof Blob)
 				sqlobj = getByteArray(sqlobj);
 			else if (sqlobj instanceof Clob)
-				sqlobj = getString(sqlobj);
-			else if (sqlobj instanceof NClob)
 				sqlobj = getString(sqlobj);
 			
 			columnList.add(sqlobj);
@@ -520,28 +517,6 @@ public class SQLRow
 				throw new SQLRuntimeException("Clob conversion to String failed.", e);
 			}
 			
-			return sw.toString();
-		}
-		else if (obj instanceof NClob)
-		{
-			NClob clob = (NClob)obj;
-			StringWriter sw = null;
-			try (Reader reader = clob.getCharacterStream()) 
-			{
-				sw = new StringWriter();
-				char[] charBuffer = CHARBUFFER.get();
-				int cbuf = 0;
-				while ((cbuf = reader.read(charBuffer)) > 0)
-					sw.write(charBuffer, 0, cbuf);
-			} 
-			catch (SQLException e) 
-			{
-				throw new SQLRuntimeException("NClob conversion to String failed.", e);
-			}
-			catch (IOException e) 
-			{
-				throw new SQLRuntimeException("NClob conversion to String failed.", e);
-			}
 			return sw.toString();
 		}
 		else if (obj instanceof Blob)
