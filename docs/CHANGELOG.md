@@ -3,6 +3,12 @@ SQL (C) Black Rook Software
 by Matt Tropiano et al. (see AUTHORS.txt)
 
 
+Changed in 1.2.3
+----------------
+
+- `Fixed` Potential NPE in SQLRow.getString()
+
+
 Changed in 1.2.2
 ----------------
 

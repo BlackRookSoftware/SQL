@@ -487,7 +487,11 @@ public class SQLRow
 
 	private String getString(Object obj)
 	{
-		if (Utils.isArray(obj))
+		if (obj == null)
+		{
+			return null;
+		}
+		else if (Utils.isArray(obj))
 		{
 			if (Utils.getArrayType(obj) == Byte.TYPE)
 				return new String((byte[])obj);
@@ -543,7 +547,7 @@ public class SQLRow
 			return new String(bos.toByteArray());
 		}
 		else
-			return obj != null ? String.valueOf(obj) : null;
+			return String.valueOf(obj);
 	}
 
 	private Timestamp getTimestamp(Object obj)
