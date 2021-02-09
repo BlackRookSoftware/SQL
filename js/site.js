@@ -1,6 +1,6 @@
-function github_api_start(response)
+function github_api_start(data)
 {
-	let repourl = response.data.repository_url
+	let repourl = data.repository_url
 		.replace('{owner}', REPO_OWNER)
 		.replace('{repo}', REPO_NAME);
 	$INC(repourl + "/releases?callback=display_release");
