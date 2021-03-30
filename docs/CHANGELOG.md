@@ -3,6 +3,12 @@ SQL (C) Black Rook Software
 by Matt Tropiano et al. (see AUTHORS.txt)
 
 
+Changed in 1.2.4
+----------------
+
+- `Fixed` SQLConnection.Transaction.isFinished() reported the opposite.
+
+
 Changed in 1.2.3
 ----------------
 

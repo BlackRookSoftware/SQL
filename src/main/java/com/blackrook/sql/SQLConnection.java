@@ -341,7 +341,7 @@ public class SQLConnection implements SQLCallable, AutoCloseable
 		 */
 		public boolean isFinished()
 		{
-			return inTransaction(); 
+			return !inTransaction(); 
 		}	
 		
 		private void finish() throws SQLException
