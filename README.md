@@ -1,6 +1,6 @@
 # Black Rook SQL
 
-Copyright (c) 2019-2020 Black Rook Software.  
+Copyright (c) 2019-2021 Black Rook Software.  
 [https://github.com/BlackRookSoftware/SQL](https://github.com/BlackRookSoftware/SQL)
 
 [Latest Release](https://github.com/BlackRookSoftware/SQL/releases/latest)
