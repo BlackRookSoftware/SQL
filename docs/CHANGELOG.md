@@ -3,6 +3,12 @@ SQL (C) Black Rook Software
 by Matt Tropiano et al. (see AUTHORS.txt)
 
 
+Changed in 1.2.5
+----------------
+
+- `Fixed` SQLConnection.Transaction did not finish properly.
+
+
 Changed in 1.2.4
 ----------------
 

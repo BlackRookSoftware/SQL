@@ -101,7 +101,8 @@ public class SQLConnection implements SQLCallable, AutoCloseable
 	 */
 	public Transaction startTransaction(TransactionLevel transactionLevel) throws SQLException
 	{
-		return new Transaction(transactionLevel);
+		verifyNotInTransaction();
+		return (transaction = new Transaction(transactionLevel));
 	}
 
 	/**
@@ -118,7 +119,7 @@ public class SQLConnection implements SQLCallable, AutoCloseable
 	 */
 	public void startTransactionAnd(TransactionLevel transactionLevel, SQLTransactionConsumer handler) throws SQLException
 	{
-		try (Transaction transaction = new Transaction(transactionLevel))
+		try (Transaction transaction = startTransaction(transactionLevel))
 		{
 			handler.accept(transaction);
 		}
@@ -140,7 +141,7 @@ public class SQLConnection implements SQLCallable, AutoCloseable
 	 */
 	public <R> R startTransactionAnd(TransactionLevel transactionLevel, SQLTransactionFunction<R> handler) throws SQLException
 	{
-		try (Transaction transaction = new Transaction(transactionLevel))
+		try (Transaction transaction = startTransaction(transactionLevel))
 		{
 			return handler.apply(transaction);
 		}
@@ -151,7 +152,7 @@ public class SQLConnection implements SQLCallable, AutoCloseable
 	 */
 	void endTransaction()
 	{
-		if (transaction != null)
+		if (inTransaction())
 		{
 			transaction.close();
 			transaction = null;
@@ -169,64 +170,56 @@ public class SQLConnection implements SQLCallable, AutoCloseable
 	@Override
 	public SQLRow getRow(String query, Object ... parameters)
 	{
-		if (inTransaction())
-			throw new IllegalStateException("A transaction is active and must be closed before this can be called.");
+		verifyNotInTransaction();
 		return SQL.getRow(connection, query, parameters);
 	}
 
 	@Override
 	public <T> T getRow(Class<T> type, String query, Object ... parameters)
 	{
-		if (inTransaction())
-			throw new IllegalStateException("A transaction is active and must be closed before this can be called.");
+		verifyNotInTransaction();
 		return SQL.getRow(connection, type, query, parameters);
 	}
 
 	@Override
 	public SQLResult getResult(String query, Object ... parameters)
 	{
-		if (inTransaction())
-			throw new IllegalStateException("A transaction is active and must be closed before this can be called.");
+		verifyNotInTransaction();
 		return SQL.getResult(connection, query, parameters);
 	}
 
 	@Override
 	public <T> T[] getResult(Class<T> type, String query, Object ... parameters)
 	{
-		if (inTransaction())
-			throw new IllegalStateException("A transaction is active and must be closed before this can be called.");
+		verifyNotInTransaction();
 		return SQL.getResult(connection, type, query, parameters);
 	}
 
 	@Override
 	public SQLResult getUpdateResult(String query, Object ... parameters)
 	{
-		if (inTransaction())
-			throw new IllegalStateException("A transaction is active and must be closed before this can be called.");
+		verifyNotInTransaction();
 		return SQL.getUpdateResult(connection, query, parameters);
 	}
 
 	@Override
 	public int[] getUpdateBatch(String query, int granularity, Collection<Object[]> parameterList) 
 	{
-		if (inTransaction())
-			throw new IllegalStateException("A transaction is active and must be closed before this can be called.");
+		verifyNotInTransaction();
 		return SQL.getUpdateBatch(connection, query, granularity, parameterList);
 	}
 
 	@Override
 	public long[] getUpdateLargeBatch(String query, int granularity, Collection<Object[]> parameterList) 
 	{
-		if (inTransaction())
-			throw new IllegalStateException("A transaction is active and must be closed before this can be called.");
+		verifyNotInTransaction();
 		return SQL.getUpdateLargeBatch(connection, query, granularity, parameterList);
 	}
 
 	@Override
 	public SQLResult[] getUpdateBatchResult(String query, Collection<Object[]> parameterList) 
 	{
-		if (inTransaction())
-			throw new IllegalStateException("A transaction is active and must be closed before this can be called.");
+		verifyNotInTransaction();
 		return SQL.getUpdateBatchResult(connection, query, parameterList);
 	}
 
@@ -249,11 +242,17 @@ public class SQLConnection implements SQLCallable, AutoCloseable
 	{
 		try {
 			endTransaction();
-			if (!connection.isClosed())
+			if (!isClosed())
 				connection.close();
 		} catch (SQLException e) {
 			// Do nothing.
 		}
+	}
+
+	private void verifyNotInTransaction()
+	{
+		if (inTransaction())
+			throw new IllegalStateException("A transaction is active and must be closed before this can be called.");
 	}
 
 	/**
@@ -270,6 +269,8 @@ public class SQLConnection implements SQLCallable, AutoCloseable
 		private int previousLevelState;
 		/** Previous auto-commit state on the incoming connection. */
 		private boolean previousAutoCommit;
+		/** Is this transaction finished? */
+		private boolean finished;
 		
 		/**
 		 * Wraps a connection in a transaction.
@@ -284,6 +285,7 @@ public class SQLConnection implements SQLCallable, AutoCloseable
 		{
 			this.previousLevelState = connection.getTransactionIsolation();
 			this.previousAutoCommit = connection.getAutoCommit();
+			this.finished = false;
 			connection.setAutoCommit(false);
 			connection.setTransactionIsolation(transactionLevel.id);
 		}
@@ -291,48 +293,56 @@ public class SQLConnection implements SQLCallable, AutoCloseable
 		@Override
 		public SQLRow getRow(String query, Object... parameters)
 		{
+			verifyUnfinished();
 			return SQL.getRow(connection, query, parameters);
 		}
 
 		@Override
 		public <T> T getRow(Class<T> type, String query, Object... parameters)
 		{
+			verifyUnfinished();
 			return SQL.getRow(connection, type, query, parameters);
 		}
 
 		@Override
 		public SQLResult getResult(String query, Object... parameters)
 		{
+			verifyUnfinished();
 			return SQL.getResult(connection, query, parameters);
 		}
 
 		@Override
 		public <T> T[] getResult(Class<T> type, String query, Object... parameters)
 		{
+			verifyUnfinished();
 			return SQL.getResult(connection, type, query, parameters);
 		}
 
 		@Override
 		public SQLResult getUpdateResult(String query, Object... parameters)
 		{
+			verifyUnfinished();
 			return SQL.getUpdateResult(connection, query, parameters);
 		}
 
 		@Override
 		public int[] getUpdateBatch(String query, int granularity, Collection<Object[]> parameterList) 
 		{
+			verifyUnfinished();
 			return SQL.getUpdateBatch(connection, query, granularity, parameterList);
 		}
 
 		@Override
 		public long[] getUpdateLargeBatch(String query, int granularity, Collection<Object[]> parameterList) 
 		{
+			verifyUnfinished();
 			return SQL.getUpdateLargeBatch(connection, query, granularity, parameterList);
 		}
 
 		@Override
 		public SQLResult[] getUpdateBatchResult(String query, Collection<Object[]> parameterList)
 		{
+			verifyUnfinished();
 			return SQL.getUpdateBatchResult(connection, query, parameterList);
 		}
 
@@ -341,15 +351,8 @@ public class SQLConnection implements SQLCallable, AutoCloseable
 		 */
 		public boolean isFinished()
 		{
-			return !inTransaction(); 
+			return finished; 
 		}	
-		
-		private void finish() throws SQLException
-		{
-			connection.setTransactionIsolation(previousLevelState);
-			connection.setAutoCommit(previousAutoCommit);
-			endTransaction();
-		}
 		
 		/**
 		 * Completes this transaction and prevents further calls on it.
@@ -360,8 +363,7 @@ public class SQLConnection implements SQLCallable, AutoCloseable
 		 */
 		public void complete() throws SQLException
 		{
-			if (isFinished())
-				throw new IllegalStateException("This transaction is already finished.");
+			verifyUnfinished();
 			connection.commit();
 			finish();
 		}
@@ -375,8 +377,7 @@ public class SQLConnection implements SQLCallable, AutoCloseable
 		 */
 		public void abort() throws SQLException
 		{
-			if (isFinished())
-				throw new IllegalStateException("This transaction is already finished.");
+			verifyUnfinished();
 			connection.rollback();
 			finish();
 		}
@@ -389,8 +390,7 @@ public class SQLConnection implements SQLCallable, AutoCloseable
 		 */
 		public void commit() throws SQLException
 		{
-			if (isFinished())
-				throw new IllegalStateException("This transaction is already finished.");
+			verifyUnfinished();
 			connection.commit();
 		}
 		
@@ -401,8 +401,7 @@ public class SQLConnection implements SQLCallable, AutoCloseable
 		 */
 		public void rollback() throws SQLException
 		{
-			if (isFinished())
-				throw new IllegalStateException("This transaction is already finished.");
+			verifyUnfinished();
 			connection.rollback();
 		}
 		
@@ -415,8 +414,7 @@ public class SQLConnection implements SQLCallable, AutoCloseable
 		 */
 		public void rollback(Savepoint savepoint) throws SQLException
 		{
-			if (isFinished())
-				throw new IllegalStateException("This transaction is already finished.");
+			verifyUnfinished();
 			connection.rollback(savepoint);
 		}
 		
@@ -428,8 +426,7 @@ public class SQLConnection implements SQLCallable, AutoCloseable
 		 */
 		public Savepoint setSavepoint() throws SQLException
 		{
-			if (isFinished())
-				throw new IllegalStateException("This transaction is already finished.");
+			verifyUnfinished();
 			return connection.setSavepoint();
 		}
 		
@@ -442,8 +439,7 @@ public class SQLConnection implements SQLCallable, AutoCloseable
 		 */
 		public Savepoint setSavepoint(String name) throws SQLException
 		{
-			if (isFinished())
-				throw new IllegalStateException("This transaction is already finished.");
+			verifyUnfinished();
 			return connection.setSavepoint(name);
 		}
 		
@@ -458,8 +454,27 @@ public class SQLConnection implements SQLCallable, AutoCloseable
 		{
 			if (!isFinished())
 			{
-				try {abort();} catch (SQLException e) { /* Eat exception. */ }
+				try {
+					connection.rollback();
+					finish();
+				} catch (SQLException e) { /* Eat exception. */ }
 			}
 		}
+
+		private void verifyUnfinished()
+		{
+			if (isFinished())
+				throw new IllegalStateException("This transaction is already finished.");
+		}
+		
+		private void finish() throws SQLException
+		{
+			connection.setTransactionIsolation(previousLevelState);
+			connection.setAutoCommit(previousAutoCommit);
+			finished = true;
+			endTransaction();
+		}
+		
 	}
+	
 }
