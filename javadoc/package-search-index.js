@@ -1,1 +1,1 @@
-packageSearchIndex = [{"l":"All Packages","url":"allpackages-index.html"},{"l":"com.blackrook.sql"},{"l":"com.blackrook.sql.hints"},{"l":"com.blackrook.sql.struct"},{"l":"com.blackrook.sql.util"}]
+packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"l":"com.blackrook.sql"},{"l":"com.blackrook.sql.hints"},{"l":"com.blackrook.sql.struct"},{"l":"com.blackrook.sql.util"}];updateSearchResults();
