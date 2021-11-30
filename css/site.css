@@ -3,6 +3,12 @@ BODY {
 	font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif, Apple Color Emoji, Segoe UI Emoji;
 }
 
+#page-links {
+	max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
 .site-logo {
 	display: block;
 	max-width: 300px;
