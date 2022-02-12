@@ -3,6 +3,13 @@ SQL (C) Black Rook Software
 by Matt Tropiano et al. (see AUTHORS.txt)
 
 
+Changed in 1.3.0
+----------------
+
+- `Added` SQLAbstractDAO.
+- `Changed` Some documentation classes and some code redundancy.
+
+
 Changed in 1.2.5
 ----------------
 

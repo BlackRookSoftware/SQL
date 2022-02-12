@@ -210,8 +210,7 @@ public class SQLPool implements AutoCloseable
 		if (!usedConnections.contains(connection))
 			throw new IllegalStateException("Tried to release a connection not maintained by this pool.");
 		
-		if (connection.inTransaction())
-			connection.endTransaction();
+		connection.endTransaction();
 		
 		synchronized (availableConnections)
 		{

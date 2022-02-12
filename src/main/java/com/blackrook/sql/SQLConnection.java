@@ -97,6 +97,7 @@ public class SQLConnection implements SQLCallable, AutoCloseable
 	 * state is restored.
 	 * @param transactionLevel the transaction level to set on this transaction.
 	 * @return a new transaction.
+	 * @throws IllegalStateException if this connection is already in a transaction. 
 	 * @throws SQLException if this transaction could not be prepared.
 	 */
 	public Transaction startTransaction(TransactionLevel transactionLevel) throws SQLException
@@ -115,6 +116,7 @@ public class SQLConnection implements SQLCallable, AutoCloseable
 	 * state is restored.
 	 * @param transactionLevel the transaction level to set on this transaction.
 	 * @param handler the consumer function that accepts the retrieved connection and returns a value.
+	 * @throws IllegalStateException if this connection is already in a transaction. 
 	 * @throws SQLException if this transaction could not be prepared.
 	 */
 	public void startTransactionAnd(TransactionLevel transactionLevel, SQLTransactionConsumer handler) throws SQLException
@@ -137,6 +139,7 @@ public class SQLConnection implements SQLCallable, AutoCloseable
 	 * @param transactionLevel the transaction level to set on this transaction.
 	 * @param handler the consumer function that accepts the retrieved connection and returns a value.
 	 * @return the return value of the handler function.
+	 * @throws IllegalStateException if this connection is already in a transaction. 
 	 * @throws SQLException if this transaction could not be prepared.
 	 */
 	public <R> R startTransactionAnd(TransactionLevel transactionLevel, SQLTransactionFunction<R> handler) throws SQLException
