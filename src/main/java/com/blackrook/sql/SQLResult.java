@@ -141,6 +141,9 @@ public class SQLResult implements Iterable<SQLRow>
 	{
 		private int current;
 		
+		/**
+		 * Resets the iterator to the beginning.
+		 */
 		public void reset()
 		{
 			current = 0;
