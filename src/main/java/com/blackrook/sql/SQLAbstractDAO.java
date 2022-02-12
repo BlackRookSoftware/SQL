@@ -259,6 +259,7 @@ public abstract class SQLAbstractDAO
 	/**
 	 * Lifts a sorted map of values from a queried {@link SQLResult} and returns it as an immutable map of key to value.
 	 * If the result has zero rows, the extractor is never called.
+	 * @param <K> the key type.
 	 * @param <V> the value type.
 	 * @param handler the handler function for returning a row from a query.
 	 * @param extractor the function for adding the map entries from a row (second parameter is the SortedMap to add to).
@@ -310,13 +311,24 @@ public abstract class SQLAbstractDAO
 	 * @param values the values.
 	 * @return the created criterion.
 	 */
-	protected static Criterion column(String columnName, Object ... values)
+	protected static Criterion columnIn(String columnName, Object ... values)
 	{
-		return new Criterion(columnName, values);
+		return new Criterion(columnName, false, values);
 	}
 	
 	/**
-	 * Creates a column criterion.
+	 * Creates a column "not in" criterion.
+	 * @param columnName the column name.
+	 * @param values the values.
+	 * @return the created criterion.
+	 */
+	protected static Criterion columnNotIn(String columnName, Object ... values)
+	{
+		return new Criterion(columnName, true, values);
+	}
+	
+	/**
+	 * Creates a column operation criterion.
 	 * @param columnName the column name.
 	 * @param operator the operator.
 	 * @param value the value.
@@ -361,13 +373,21 @@ public abstract class SQLAbstractDAO
 	 */
 	public static enum Operator
 	{
+		/** Equals */
 		EQUAL("="),
+		/** Not Equals */
 		NOT_EQUAL("<>"),
+		/** Less Than */
 		LESS("<"),
+		/** Less Than or Equal */
 		LESS_EQUAL("<="),
+		/** Greater Than */
 		GREATER(">"),
+		/** Greater Than or Equal */
 		GREATER_EQUAL(">="),
+		/** Like clause */
 		LIKE("LIKE"),
+		/** Not like clause */
 		NOT_LIKE("NOT LIKE"),
 		;
 		
@@ -391,6 +411,7 @@ public abstract class SQLAbstractDAO
 	public static class Criterion
 	{
 		private String columnName;
+		private boolean notIn;
 		private Operator operator;
 		private Object value;
 		
@@ -401,9 +422,10 @@ public abstract class SQLAbstractDAO
 			this.value = null;
 		}
 
-		private Criterion(String columnName, Object ... values)
+		private Criterion(String columnName, boolean notIn, Object ... values)
 		{
 			this.columnName = columnName;
+			this.notIn = notIn;
 			this.operator = null;
 			this.value = values;
 		}
@@ -415,11 +437,16 @@ public abstract class SQLAbstractDAO
 			this.value = value;
 		}
 		
-		public String toParameterizedString()
+		/**
+		 * Returns a string of this criterion clause with parameter tokens (for parameterized queries).
+		 * @param columnEscapeFunction the function to use for escaping column names (parameter is incoming column name).
+		 * @return the resultant clause.
+		 */
+		private String toParameterizedString(Function<String, String> columnEscapeFunction)
 		{
 			if (operator == null)
 			{
-				return "\"" + columnName + "\"" + " IS NULL";
+				return columnEscapeFunction.apply(columnName) + " IS NULL";
 			}
 			else if (value.getClass().isArray())
 			{
@@ -431,11 +458,11 @@ public abstract class SQLAbstractDAO
 					if (i < values.length - 1)
 						sb.append(", ");
 				}
-				return "\"" + columnName + "\"" + " IN (" + sb.toString() + ")";
+				return columnEscapeFunction.apply(columnName) + (notIn ? " NOT" : "") + " IN (" + sb.toString() + ")";
 			}
 			else
 			{
-				return "\"" + columnName + "\"" + " " + operator.toString() + " ?";
+				return columnEscapeFunction.apply(columnName) + " " + operator.toString() + " ?";
 			}
 		}
 		
@@ -461,9 +488,14 @@ public abstract class SQLAbstractDAO
 			this.ascending = ascending;
 		}
 		
-		public String toClauseString()
+		/**
+		 * Returns a string of this ordering clause.
+		 * @param columnEscapeFunction the function to use for escaping column names (parameter is incoming column name).
+		 * @return the resultant clause.
+		 */
+		private String toClauseString(Function<String, String> columnEscapeFunction)
 		{
-			return "\"" + columnName + "\"" + (ascending != null ? (ascending ? " ASC" : " DESC") : "");
+			return columnEscapeFunction.apply(columnName) + (ascending != null ? (ascending ? " ASC" : " DESC") : "");
 		}
 	}
 	
@@ -481,15 +513,16 @@ public abstract class SQLAbstractDAO
 
 		/**
 		 * Adds "where" criteria.
+		 * @param columnEscapeFunction the function to use for escaping column names (parameter is incoming column name).
 		 * @param criteria the criteria. 
 		 * @return this builder.
 		 */
-		public QueryStringBuilder where(Criterion ... criteria)
+		public QueryStringBuilder where(Function<String, String> columnEscapeFunction, Criterion ... criteria)
 		{
 			buffer.append("\nWHERE\n");
 			for (int i = 0; i < criteria.length; i++)
 			{
-				buffer.append(criteria[i].toParameterizedString());
+				buffer.append(criteria[i].toParameterizedString(columnEscapeFunction));
 				if (i < criteria.length - 1)
 					buffer.append('\n').append("AND ");
 			}
@@ -498,15 +531,16 @@ public abstract class SQLAbstractDAO
 		
 		/**
 		 * Adds "order by" criteria.
+		 * @param columnEscapeFunction the function to use for escaping column names (parameter is incoming column name).
 		 * @param ordering the ordering criteria. 
 		 * @return this builder.
 		 */
-		public QueryStringBuilder orderBy(Ordering ... ordering)
+		public QueryStringBuilder orderBy(Function<String, String> columnEscapeFunction, Ordering ... ordering)
 		{
 			buffer.append("\nORDER BY\n");
 			for (int i = 0; i < ordering.length; i++)
 			{
-				buffer.append(ordering[i].toClauseString());
+				buffer.append(ordering[i].toClauseString(columnEscapeFunction));
 				if (i < ordering.length - 1)
 					buffer.append(", ");
 			}
